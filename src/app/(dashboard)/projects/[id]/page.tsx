@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import { getProject } from '@/lib/actions/projects'
+import { getTimeSessions, getActiveSession } from '@/lib/actions/time-sessions'
+import { getCounters } from '@/lib/actions/counters'
 import { createClient } from '@/lib/supabase/server'
-import ProjectDetailClient from './ProjectDetailClient'
+import ProjectDashboard from './ProjectDashboard'
 
 export default async function ProjectDetailPage({
   params,
@@ -9,7 +11,18 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { data: project, error } = await getProject(id)
+
+  const [
+    { data: project, error },
+    { data: sessions, totalDurationSeconds },
+    { data: activeSession },
+    { data: counters },
+  ] = await Promise.all([
+    getProject(id),
+    getTimeSessions(id),
+    getActiveSession(id),
+    getCounters(id),
+  ])
 
   if (error || !project) {
     notFound()
@@ -27,5 +40,13 @@ export default async function ProjectDetailPage({
     patternTitle = pattern?.title ?? null
   }
 
-  return <ProjectDetailClient project={project} patternTitle={patternTitle} />
+  return (
+    <ProjectDashboard
+      project={project}
+      patternTitle={patternTitle}
+      activeSession={activeSession}
+      totalDurationSeconds={totalDurationSeconds}
+      counters={counters ?? []}
+    />
+  )
 }

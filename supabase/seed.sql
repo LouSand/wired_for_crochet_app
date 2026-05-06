@@ -19,7 +19,7 @@ BEGIN
   -- ============================================================
   -- USER SETTINGS (Pro tier)
   -- ============================================================
-  INSERT INTO user_settings (user_id, default_hourly_rate, subscription_tier)in t
+  INSERT INTO user_settings (user_id, default_hourly_rate, subscription_tier)
   VALUES (uid, 20.00, 'pro')
   ON CONFLICT (user_id) DO UPDATE SET subscription_tier = 'pro', default_hourly_rate = 20.00;
 

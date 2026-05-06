@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getProduct, deleteProduct } from '@/lib/actions/business-products'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 
 export default async function ProductDetailPage({
   params,
@@ -8,7 +10,11 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { data: product, error } = await getProduct(id)
+  const [{ data: product, error }, settings] = await Promise.all([
+    getProduct(id),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   if (error || !product) {
     notFound()
@@ -37,7 +43,7 @@ export default async function ProductDetailPage({
             <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
             <div className="mt-2 flex items-center gap-3">
               <span className="text-lg font-semibold text-gray-900">
-                ${Number(product.sell_price).toFixed(2)}
+                {formatCurrency(Number(product.sell_price), currency)}
               </span>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -98,7 +104,7 @@ export default async function ProductDetailPage({
             <div>
               <p className="text-xs text-gray-500">Wages per Minute</p>
               <p className="text-sm font-medium text-gray-900">
-                ${Number(product.wages_per_minute).toFixed(4)}
+                {formatCurrency(Number(product.wages_per_minute), currency)}
               </p>
             </div>
           )}

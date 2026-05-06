@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getMaterials } from '@/lib/actions/materials'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 import { MATERIAL_CATEGORIES } from '@/types/business'
 import type { MaterialCategory } from '@/types/business'
 
@@ -11,7 +13,11 @@ export default async function MaterialsPage({
   const params = await searchParams
   const category = typeof params.category === 'string' ? params.category as MaterialCategory : undefined
 
-  const { data: materials, error } = await getMaterials({ category })
+  const [{ data: materials, error }, settings] = await Promise.all([
+    getMaterials({ category }),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   return (
     <div>
@@ -107,7 +113,7 @@ export default async function MaterialsPage({
               {materials.map((material) => {
                 const available = Math.max(0, material.quantity_owned - material.quantity_used)
                 const costPerUnit = material.cost_per_unit
-                  ? `$${Number(material.cost_per_unit).toFixed(4)}`
+                  ? formatCurrency(Number(material.cost_per_unit), currency)
                   : '—'
                 return (
                   <tr key={material.id} className="hover:bg-gray-50">

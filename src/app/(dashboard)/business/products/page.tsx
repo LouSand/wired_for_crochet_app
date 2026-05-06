@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getProducts } from '@/lib/actions/business-products'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 
 export default async function ProductsPage({
   searchParams,
@@ -9,7 +11,11 @@ export default async function ProductsPage({
   const params = await searchParams
   const showDiscontinued = params.show_discontinued === 'true'
 
-  const { data: products, error } = await getProducts(showDiscontinued)
+  const [{ data: products, error }, settings] = await Promise.all([
+    getProducts(showDiscontinued),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   return (
     <div>
@@ -80,7 +86,7 @@ export default async function ProductsPage({
                         {product.name}
                       </p>
                       <p className="mt-1 text-sm text-gray-500">
-                        ${Number(product.sell_price).toFixed(2)}
+                        {formatCurrency(Number(product.sell_price), currency)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">

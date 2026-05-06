@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getExpenses } from '@/lib/actions/expenses'
 import { getSuppliers } from '@/lib/actions/suppliers'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 import { EXPENSE_CATEGORIES } from '@/types/business'
 import type { ExpenseCategory } from '@/types/business'
 
@@ -15,14 +17,12 @@ export default async function ExpensesPage({
   const start_date = typeof params.start_date === 'string' ? params.start_date : undefined
   const end_date = typeof params.end_date === 'string' ? params.end_date : undefined
 
-  const { data: expenses, error } = await getExpenses({
-    category,
-    supplier_id,
-    start_date,
-    end_date,
-  })
-
-  const { data: suppliers } = await getSuppliers()
+  const [{ data: expenses, error }, { data: suppliers }, settings] = await Promise.all([
+    getExpenses({ category, supplier_id, start_date, end_date }),
+    getSuppliers(),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   const totalExpenses = expenses?.reduce((sum, exp) => sum + Number(exp.cost), 0) ?? 0
 
@@ -46,7 +46,7 @@ export default async function ExpensesPage({
       {/* Running total */}
       <div className="mt-4 rounded-md bg-purple-50 p-4">
         <p className="text-sm text-purple-700">
-          Total Expenses: <span className="font-semibold">${totalExpenses.toFixed(2)}</span>
+          Total Expenses: <span className="font-semibold">{formatCurrency(totalExpenses, currency)}</span>
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export default async function ExpensesPage({
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900">
-                      ${Number(expense.cost).toFixed(2)}
+                      {formatCurrency(Number(expense.cost), currency)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {supplierName ?? '—'}

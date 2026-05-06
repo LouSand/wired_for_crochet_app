@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { getSales } from '@/lib/actions/sales'
 import { getProducts } from '@/lib/actions/business-products'
 import { getCustomers } from '@/lib/actions/customers'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 
 export default async function SalesPage({
   searchParams,
@@ -14,15 +16,13 @@ export default async function SalesPage({
   const start_date = typeof params.start_date === 'string' ? params.start_date : undefined
   const end_date = typeof params.end_date === 'string' ? params.end_date : undefined
 
-  const { data: sales, error } = await getSales({
-    product_id,
-    customer_id,
-    start_date,
-    end_date,
-  })
-
-  const { data: products } = await getProducts(true)
-  const { data: customers } = await getCustomers()
+  const [{ data: sales, error }, { data: products }, { data: customers }, settings] = await Promise.all([
+    getSales({ product_id, customer_id, start_date, end_date }),
+    getProducts(true),
+    getCustomers(),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   const totalRevenue = sales?.reduce((sum, s) => sum + Number(s.sale_price), 0) ?? 0
 
@@ -46,7 +46,7 @@ export default async function SalesPage({
       {/* Running total */}
       <div className="mt-4 rounded-md bg-green-50 p-4">
         <p className="text-sm text-green-700">
-          Total Revenue: <span className="font-semibold">${totalRevenue.toFixed(2)}</span>
+          Total Revenue: <span className="font-semibold">{formatCurrency(totalRevenue, currency)}</span>
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export default async function SalesPage({
                       {sale.quantity_sold}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900">
-                      ${Number(sale.sale_price).toFixed(2)}
+                      {formatCurrency(Number(sale.sale_price), currency)}
                     </td>
                   </tr>
                 )

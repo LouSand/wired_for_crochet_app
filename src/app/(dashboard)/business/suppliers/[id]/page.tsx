@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSupplier, deleteSupplier } from '@/lib/actions/suppliers'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 
 export default async function SupplierDetailPage({
   params,
@@ -8,7 +10,11 @@ export default async function SupplierDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { data: supplier, error } = await getSupplier(id)
+  const [{ data: supplier, error }, settings] = await Promise.all([
+    getSupplier(id),
+    getSettings(),
+  ])
+  const currency = settings.default_currency
 
   if (error || !supplier) {
     notFound()
@@ -111,7 +117,7 @@ export default async function SupplierDetailPage({
                       {purchase.category.replace(/_/g, ' ')}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
-                      ${Number(purchase.cost).toFixed(2)}
+                      {formatCurrency(Number(purchase.cost), currency)}
                     </td>
                   </tr>
                 ))}

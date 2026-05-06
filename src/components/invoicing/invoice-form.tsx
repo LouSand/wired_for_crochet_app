@@ -30,9 +30,14 @@ interface InvoiceFormProps {
   invoice?: InvoiceRow & { items?: InvoiceItemRow[] }
   customers: Customer[]
   projects?: Project[]
+  prefill?: {
+    customer_id?: string
+    project_id?: string
+    items: { description: string; quantity: number; unit_price: number }[]
+  }
 }
 
-export default function InvoiceForm({ invoice, customers, projects }: InvoiceFormProps) {
+export default function InvoiceForm({ invoice, customers, projects, prefill }: InvoiceFormProps) {
   const router = useRouter()
   const hasSubmitted = useRef(false)
   const isEditing = !!invoice
@@ -42,7 +47,7 @@ export default function InvoiceForm({ invoice, customers, projects }: InvoiceFor
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unit_price,
-    })) ?? [{ description: '', quantity: 1, unit_price: 0 }]
+    })) ?? prefill?.items ?? [{ description: '', quantity: 1, unit_price: 0 }]
   )
 
   const action = isEditing
@@ -113,7 +118,7 @@ export default function InvoiceForm({ invoice, customers, projects }: InvoiceFor
         <div className="mt-1">
           <CustomerSelect
             customers={customers}
-            defaultValue={invoice?.customer_id}
+            defaultValue={invoice?.customer_id ?? prefill?.customer_id}
             name="customer_id"
           />
         </div>
@@ -173,7 +178,7 @@ export default function InvoiceForm({ invoice, customers, projects }: InvoiceFor
           <select
             id="project_id"
             name="project_id"
-            defaultValue={invoice?.project_id ?? ''}
+            defaultValue={invoice?.project_id ?? prefill?.project_id ?? ''}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           >
             <option value="">No project</option>
@@ -184,6 +189,11 @@ export default function InvoiceForm({ invoice, customers, projects }: InvoiceFor
             ))}
           </select>
         </div>
+      )}
+
+      {/* Hidden project_id when prefilled but no project dropdown */}
+      {!projects && prefill?.project_id && (
+        <input type="hidden" name="project_id" value={prefill.project_id} />
       )}
 
       {/* Line Items */}

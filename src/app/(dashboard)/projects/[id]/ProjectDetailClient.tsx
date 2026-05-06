@@ -131,6 +131,12 @@ export default function ProjectDetailClient({ project, patternTitle }: ProjectDe
         </div>
 
         <div className="flex gap-2">
+          <Link
+            href={`/business/invoicing/invoices/new?from_project=${project.id}`}
+            className="inline-flex items-center rounded-md border border-purple-300 bg-white px-3 py-2 text-sm font-medium text-purple-700 shadow-sm hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          >
+            Create Invoice
+          </Link>
           <button
             type="button"
             onClick={() => setIsEditing(!isEditing)}

@@ -38,8 +38,23 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
 export async function assertProTier(): Promise<{ error: string } | null> {
   const tier = await getSubscriptionTier()
 
-  if (tier !== 'pro') {
+  if (tier !== 'pro' && tier !== 'pro_plus') {
     return { error: 'Pro subscription required to access this feature.' }
+  }
+
+  return null
+}
+
+/**
+ * Asserts that the current user has a 'pro_plus' subscription tier.
+ * Returns an error object if not pro_plus, or null if the user is pro_plus.
+ * Used to gate invoicing features which require the higher tier.
+ */
+export async function assertProPlusTier(): Promise<{ error: string } | null> {
+  const tier = await getSubscriptionTier()
+
+  if (tier !== 'pro_plus') {
+    return { error: 'Pro+ subscription required to access invoicing features.' }
   }
 
   return null

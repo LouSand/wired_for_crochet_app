@@ -8,13 +8,13 @@ interface TierGateProps {
 
 /**
  * Server component that gates content behind a Pro subscription.
- * If the user is on the 'pro' tier, renders children.
+ * If the user is on the 'pro' or 'pro_plus' tier, renders children.
  * If the user is on the 'free' tier, renders the fallback or UpgradePrompt.
  */
 export default async function TierGate({ children, fallback }: TierGateProps) {
   const tier = await getSubscriptionTier()
 
-  if (tier === 'pro') {
+  if (tier === 'pro' || tier === 'pro_plus') {
     return <>{children}</>
   }
 

@@ -8,7 +8,7 @@
 // Enum constants
 // ============================================================
 
-export const SUBSCRIPTION_TIERS = ['free', 'pro'] as const;
+export const SUBSCRIPTION_TIERS = ['free', 'pro', 'pro_plus'] as const;
 export type SubscriptionTier = (typeof SUBSCRIPTION_TIERS)[number];
 
 export const EXPENSE_CATEGORIES = [

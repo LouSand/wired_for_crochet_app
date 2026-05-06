@@ -10,6 +10,8 @@ export type SettingsState = {
 
 export interface UserSettingsData {
   default_hourly_rate: number | null
+  default_currency: string
+  default_profit_margin: number | null
 }
 
 /**
@@ -23,20 +25,24 @@ export async function getSettings(): Promise<UserSettingsData> {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return { default_hourly_rate: null }
+    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null }
   }
 
   const { data } = await supabase
     .from('user_settings')
-    .select('default_hourly_rate')
+    .select('default_hourly_rate, default_currency, default_profit_margin')
     .eq('user_id', user.id)
     .single()
 
   if (!data) {
-    return { default_hourly_rate: null }
+    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null }
   }
 
-  return { default_hourly_rate: data.default_hourly_rate }
+  return {
+    default_hourly_rate: data.default_hourly_rate,
+    default_currency: data.default_currency ?? 'GBP',
+    default_profit_margin: data.default_profit_margin ?? null,
+  }
 }
 
 /**
@@ -57,15 +63,19 @@ export async function updateSettings(
   }
 
   const rateValue = formData.get('default_hourly_rate') as string
+  const currencyValue = formData.get('default_currency') as string
+  const profitMarginValue = formData.get('default_profit_margin') as string
 
-  if (!rateValue || rateValue.trim() === '') {
-    return { error: 'Hourly rate is required.' }
+  const rate = rateValue && rateValue.trim() !== '' ? parseFloat(rateValue) : null
+  const currency = currencyValue && currencyValue.trim() !== '' ? currencyValue.trim() : 'GBP'
+  const profitMargin = profitMarginValue && profitMarginValue.trim() !== '' ? parseFloat(profitMarginValue) : null
+
+  if (rate !== null && (isNaN(rate) || rate < 0)) {
+    return { error: 'Hourly rate must be a valid non-negative number.' }
   }
 
-  const rate = parseFloat(rateValue)
-
-  if (isNaN(rate) || rate < 0) {
-    return { error: 'Hourly rate must be a valid non-negative number.' }
+  if (profitMargin !== null && (isNaN(profitMargin) || profitMargin < 0)) {
+    return { error: 'Profit margin must be a valid non-negative number.' }
   }
 
   // Check if settings already exist
@@ -81,6 +91,8 @@ export async function updateSettings(
       .from('user_settings')
       .update({
         default_hourly_rate: rate,
+        default_currency: currency,
+        default_profit_margin: profitMargin,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.id)
@@ -93,6 +105,8 @@ export async function updateSettings(
     const { error } = await supabase.from('user_settings').insert({
       user_id: user.id,
       default_hourly_rate: rate,
+      default_currency: currency,
+      default_profit_margin: profitMargin,
     })
 
     if (error) {

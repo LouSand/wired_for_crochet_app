@@ -256,7 +256,7 @@ This plan implements the Business Suite as a premium extension to the existing "
     - **Validates: Requirements 3.3**
 
 - [ ] 11. Bill of materials (BOM)
-  - [-] 11.1 Create BOM calculator pure function in `src/lib/bom-calculator.ts`
+  - [x] 11.1 Create BOM calculator pure function in `src/lib/bom-calculator.ts`
     - Implement `calculateBomCost` function per design specification
     - Compute material_cost, labour_cost, extras_total, total_production_cost, profit_margin_amount, suggested_sell_price
     - Track invalid_line_items count (null material_id)

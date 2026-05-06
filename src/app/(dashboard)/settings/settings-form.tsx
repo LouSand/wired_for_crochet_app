@@ -2,19 +2,49 @@
 
 import { useActionState } from 'react'
 import { updateSettings, type SettingsState } from '@/lib/actions/settings'
+import { SUPPORTED_CURRENCIES } from '@/lib/validators/project'
+import { CURRENCY_SYMBOLS } from '@/lib/currency'
 
 interface SettingsFormProps {
   defaultHourlyRate: number | null
+  defaultCurrency: string
+  defaultProfitMargin: number | null
 }
 
-export default function SettingsForm({ defaultHourlyRate }: SettingsFormProps) {
+export default function SettingsForm({ defaultHourlyRate, defaultCurrency, defaultProfitMargin }: SettingsFormProps) {
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
     updateSettings,
     null
   )
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-6">
+      {/* Default Currency */}
+      <div>
+        <label
+          htmlFor="default_currency"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Default Currency
+        </label>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Used across the app for displaying prices. Can be overridden per project.
+        </p>
+        <select
+          id="default_currency"
+          name="default_currency"
+          defaultValue={defaultCurrency}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        >
+          {SUPPORTED_CURRENCIES.map((code) => (
+            <option key={code} value={code}>
+              {code} ({CURRENCY_SYMBOLS[code] ?? code})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Default Hourly Rate */}
       <div>
         <label
           htmlFor="default_hourly_rate"
@@ -25,25 +55,39 @@ export default function SettingsForm({ defaultHourlyRate }: SettingsFormProps) {
         <p className="mt-0.5 text-xs text-gray-500">
           Used in the pricing calculator when no project-specific rate is set.
         </p>
-        <div className="relative mt-1">
-          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-            $
-          </span>
-          <input
-            type="number"
-            id="default_hourly_rate"
-            name="default_hourly_rate"
-            step="0.01"
-            min="0"
-            defaultValue={defaultHourlyRate ?? ''}
-            placeholder="0.00"
-            className="block w-full rounded-md border border-gray-300 py-2 pl-7 pr-3 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            aria-describedby="rate-description"
-          />
-        </div>
-        <p id="rate-description" className="sr-only">
-          Enter your default hourly rate in dollars. This is used for pricing calculations.
+        <input
+          type="number"
+          id="default_hourly_rate"
+          name="default_hourly_rate"
+          step="0.01"
+          min="0"
+          defaultValue={defaultHourlyRate ?? ''}
+          placeholder="0.00"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        />
+      </div>
+
+      {/* Default Profit Margin */}
+      <div>
+        <label
+          htmlFor="default_profit_margin"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Default Profit Margin (%)
+        </label>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Applied to pricing calculations. Can be overridden per project.
         </p>
+        <input
+          type="number"
+          id="default_profit_margin"
+          name="default_profit_margin"
+          step="0.1"
+          min="0"
+          defaultValue={defaultProfitMargin ?? ''}
+          placeholder="e.g. 20"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        />
       </div>
 
       {state?.error && (

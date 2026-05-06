@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useRef } from 'react'
 import { addBomLineItem, removeBomLineItem, type BomActionState, type BomLineItemWithMaterial } from '@/lib/actions/bom'
 import type { MaterialRow } from '@/types/business'
+import { formatCurrency } from '@/lib/currency'
 
 function RemoveButton({ itemId, productId }: { itemId: string; productId: string }) {
   const handleRemove = async () => {
@@ -26,9 +27,10 @@ interface BomEditorProps {
   productId: string
   lineItems: BomLineItemWithMaterial[]
   materials: MaterialRow[]
+  currency: string
 }
 
-export default function BomEditor({ productId, lineItems, materials }: BomEditorProps) {
+export default function BomEditor({ productId, lineItems, materials, currency }: BomEditorProps) {
   const formRef = useRef<HTMLFormElement>(null)
 
   const addAction = addBomLineItem.bind(null, productId)
@@ -149,10 +151,10 @@ export default function BomEditor({ productId, lineItems, materials }: BomEditor
                       {item.quantity_required}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-600">
-                      {isInvalid ? '—' : `$${Number(costPerUnit).toFixed(4)}`}
+                      {isInvalid ? '—' : formatCurrency(Number(costPerUnit), currency)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900">
-                      {isInvalid ? '—' : `$${lineTotal.toFixed(2)}`}
+                      {isInvalid ? '—' : formatCurrency(lineTotal, currency)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <RemoveButton itemId={item.id} productId={item.product_id} />

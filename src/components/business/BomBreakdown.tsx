@@ -1,10 +1,12 @@
 import type { BomCostBreakdown } from '@/lib/bom-calculator'
+import { formatCurrency } from '@/lib/currency'
 
 interface BomBreakdownProps {
   breakdown: BomCostBreakdown
+  currency: string
 }
 
-export default function BomBreakdown({ breakdown }: BomBreakdownProps) {
+export default function BomBreakdown({ breakdown, currency }: BomBreakdownProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Breakdown</h3>
@@ -20,32 +22,32 @@ export default function BomBreakdown({ breakdown }: BomBreakdownProps) {
       <dl className="space-y-3">
         <div className="flex justify-between">
           <dt className="text-sm text-gray-600">Material Cost</dt>
-          <dd className="text-sm font-medium text-gray-900">${breakdown.material_cost.toFixed(2)}</dd>
+          <dd className="text-sm font-medium text-gray-900">{formatCurrency(breakdown.material_cost, currency)}</dd>
         </div>
 
         <div className="flex justify-between">
           <dt className="text-sm text-gray-600">Labour Cost</dt>
-          <dd className="text-sm font-medium text-gray-900">${breakdown.labour_cost.toFixed(2)}</dd>
+          <dd className="text-sm font-medium text-gray-900">{formatCurrency(breakdown.labour_cost, currency)}</dd>
         </div>
 
         <div className="flex justify-between">
           <dt className="text-sm text-gray-600">Extras</dt>
-          <dd className="text-sm font-medium text-gray-900">${breakdown.extras_total.toFixed(2)}</dd>
+          <dd className="text-sm font-medium text-gray-900">{formatCurrency(breakdown.extras_total, currency)}</dd>
         </div>
 
         <div className="border-t border-gray-200 pt-3 flex justify-between">
           <dt className="text-sm font-medium text-gray-900">Total Production Cost</dt>
-          <dd className="text-sm font-bold text-gray-900">${breakdown.total_production_cost.toFixed(2)}</dd>
+          <dd className="text-sm font-bold text-gray-900">{formatCurrency(breakdown.total_production_cost, currency)}</dd>
         </div>
 
         <div className="flex justify-between">
           <dt className="text-sm text-gray-600">Profit Margin</dt>
-          <dd className="text-sm font-medium text-gray-900">+${breakdown.profit_margin_amount.toFixed(2)}</dd>
+          <dd className="text-sm font-medium text-gray-900">+{formatCurrency(breakdown.profit_margin_amount, currency)}</dd>
         </div>
 
         <div className="border-t border-gray-200 pt-3 flex justify-between">
           <dt className="text-sm font-semibold text-purple-700">Suggested Sell Price</dt>
-          <dd className="text-lg font-bold text-purple-700">${breakdown.suggested_sell_price.toFixed(2)}</dd>
+          <dd className="text-lg font-bold text-purple-700">{formatCurrency(breakdown.suggested_sell_price, currency)}</dd>
         </div>
       </dl>
     </div>

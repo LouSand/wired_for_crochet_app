@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getProduct } from '@/lib/actions/business-products'
 import { getBomForProduct, calculateProductBomCost } from '@/lib/actions/bom'
 import { getMaterials } from '@/lib/actions/materials'
+import { getSettings } from '@/lib/actions/settings'
 import BomEditor from '@/components/business/BomEditor'
 import BomBreakdown from '@/components/business/BomBreakdown'
 
@@ -12,11 +13,16 @@ export default async function BomPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { data: product, error: productError } = await getProduct(id)
+  const [{ data: product, error: productError }, settings] = await Promise.all([
+    getProduct(id),
+    getSettings(),
+  ])
 
   if (productError || !product) {
     notFound()
   }
+
+  const currency = settings?.default_currency ?? 'GBP'
 
   const { data: lineItems } = await getBomForProduct(id)
   const { data: materials } = await getMaterials()
@@ -45,11 +51,12 @@ export default async function BomPage({
             productId={id}
             lineItems={lineItems ?? []}
             materials={materials ?? []}
+            currency={currency}
           />
         </div>
 
         <div>
-          {breakdown && <BomBreakdown breakdown={breakdown} />}
+          {breakdown && <BomBreakdown breakdown={breakdown} currency={currency} />}
         </div>
       </div>
     </div>

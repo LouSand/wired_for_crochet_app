@@ -73,6 +73,13 @@ export async function createMaterial(
     quantity_used: validated.quantity_used,
     total_cost: validated.total_cost ?? null,
     unit: validated.unit,
+    secondary_unit: (formData.get('secondary_unit') as string) || null,
+    secondary_quantity_owned: (formData.get('secondary_quantity_owned') as string)
+      ? parseFloat(formData.get('secondary_quantity_owned') as string)
+      : null,
+    secondary_quantity_used: (formData.get('secondary_quantity_used') as string)
+      ? parseFloat(formData.get('secondary_quantity_used') as string)
+      : null,
   })
 
   if (error) {
@@ -159,6 +166,13 @@ export async function updateMaterial(
       quantity_used: validated.quantity_used,
       total_cost: validated.total_cost ?? null,
       unit: validated.unit,
+      secondary_unit: (formData.get('secondary_unit') as string) || null,
+      secondary_quantity_owned: (formData.get('secondary_quantity_owned') as string)
+        ? parseFloat(formData.get('secondary_quantity_owned') as string)
+        : null,
+      secondary_quantity_used: (formData.get('secondary_quantity_used') as string)
+        ? parseFloat(formData.get('secondary_quantity_used') as string)
+        : null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

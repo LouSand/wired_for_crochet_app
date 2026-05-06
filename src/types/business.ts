@@ -26,7 +26,7 @@ export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 export const MATERIAL_CATEGORIES = ['yarn', 'accessories', 'hardware', 'tools'] as const;
 export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number];
 
-export const MATERIAL_UNITS = ['grams', 'metres', 'pieces', 'skeins'] as const;
+export const MATERIAL_UNITS = ['grams', 'ounces', 'metres', 'yards', 'skeins', 'balls', 'pieces'] as const;
 export type MaterialUnit = (typeof MATERIAL_UNITS)[number];
 
 // ============================================================
@@ -125,6 +125,9 @@ export interface MaterialRow {
   total_cost: number | null;
   cost_per_unit: number | null;
   unit: MaterialUnit;
+  secondary_unit: MaterialUnit | null;
+  secondary_quantity_owned: number | null;
+  secondary_quantity_used: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +143,9 @@ export interface MaterialInsert {
   quantity_used?: number;
   total_cost?: number | null;
   unit?: MaterialUnit;
+  secondary_unit?: MaterialUnit | null;
+  secondary_quantity_owned?: number | null;
+  secondary_quantity_used?: number | null;
   created_at?: string;
   updated_at?: string;
 }

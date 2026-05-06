@@ -212,12 +212,15 @@ export default function MaterialForm({ material }: MaterialFormProps) {
       {/* Unit */}
       <div>
         <label htmlFor="unit" className="block text-sm font-medium text-gray-700">
-          Unit
+          Primary Unit
         </label>
+        <p className="mt-0.5 text-xs text-gray-500">
+          The main unit you track this material in (e.g. skeins for yarn you buy by the skein).
+        </p>
         <select
           id="unit"
           name="unit"
-          defaultValue={material?.unit ?? 'pieces'}
+          defaultValue={material?.unit ?? 'skeins'}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
         >
           {MATERIAL_UNITS.map((unit) => (
@@ -227,6 +230,69 @@ export default function MaterialForm({ material }: MaterialFormProps) {
           ))}
         </select>
       </div>
+
+      {/* Secondary Unit (optional) */}
+      <fieldset className="rounded-md border border-gray-200 p-4">
+        <legend className="text-sm font-medium text-gray-700 px-1">
+          Secondary Unit (optional)
+        </legend>
+        <p className="text-xs text-gray-500 mb-3">
+          Track this material in a second unit too — e.g. if you buy yarn by the skein but patterns call for metres or grams.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label htmlFor="secondary_unit" className="block text-xs font-medium text-gray-700">
+              Unit
+            </label>
+            <select
+              id="secondary_unit"
+              name="secondary_unit"
+              defaultValue={material?.secondary_unit ?? ''}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            >
+              <option value="">None</option>
+              {MATERIAL_UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="secondary_quantity_owned" className="block text-xs font-medium text-gray-700">
+              Quantity Owned
+            </label>
+            <input
+              type="number"
+              id="secondary_quantity_owned"
+              name="secondary_quantity_owned"
+              step="0.01"
+              min="0"
+              defaultValue={material?.secondary_quantity_owned ?? ''}
+              placeholder="e.g. 450"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="secondary_quantity_used" className="block text-xs font-medium text-gray-700">
+              Quantity Used
+            </label>
+            <input
+              type="number"
+              id="secondary_quantity_used"
+              name="secondary_quantity_used"
+              step="0.01"
+              min="0"
+              defaultValue={material?.secondary_quantity_used ?? ''}
+              placeholder="e.g. 120"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+        </div>
+      </fieldset>
 
       {/* Computed fields (read-only) */}
       <div className="rounded-md bg-gray-50 p-4">

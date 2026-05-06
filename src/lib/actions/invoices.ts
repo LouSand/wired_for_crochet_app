@@ -458,3 +458,28 @@ export async function getInvoice(id: string): Promise<{
 
   return { data: result, error: null }
 }
+
+/**
+ * Check for overdue invoices and update their status.
+ * Queries invoices where due_date < today AND status IN ('unpaid', 'partial'),
+ * then updates their status to 'overdue'.
+ * Called when loading the invoice list to keep statuses current.
+ */
+export async function checkOverdueInvoices(): Promise<void> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return
+
+  const today = new Date().toISOString().split('T')[0]
+
+  await supabase
+    .from('invoices')
+    .update({ status: 'overdue', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .in('status', ['unpaid', 'partial'])
+    .lt('due_date', today)
+}

@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { getInvoices } from '@/lib/actions/invoices'
+import { getInvoices, checkOverdueInvoices } from '@/lib/actions/invoices'
 import InvoiceList from '@/components/invoicing/invoice-list'
 
 export default async function InvoicesPage() {
+  // Check and update overdue statuses before fetching
+  await checkOverdueInvoices()
   const { data: invoices, error } = await getInvoices()
 
   return (

@@ -56,6 +56,12 @@ export async function createProject(
     rawData.hourly_rate_override = parseFloat(hourlyRateStr)
   }
 
+  // Parse profit_margin as number if provided
+  const profitMarginStr = formData.get('profit_margin') as string
+  if (profitMarginStr && profitMarginStr.trim() !== '') {
+    rawData.profit_margin = parseFloat(profitMarginStr)
+  }
+
   // Validate with Zod
   const result = projectFormSchema.safeParse(rawData)
 
@@ -86,6 +92,7 @@ export async function createProject(
     hourly_rate_override: validated.hourly_rate_override ?? null,
     pattern_id: validated.pattern_id ?? null,
     currency: validated.currency,
+    profit_margin: (rawData as Record<string, unknown>).profit_margin ?? null,
   })
 
   if (error) {

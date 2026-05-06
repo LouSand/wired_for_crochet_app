@@ -54,6 +54,7 @@ export const projectFormSchema = z.object({
   hourly_rate_override: z.number().nonnegative("Hourly rate must be non-negative").optional(),
   pattern_id: z.string().uuid("Must be a valid UUID").optional(),
   currency: z.enum(SUPPORTED_CURRENCIES).default('USD'),
+  profit_margin: z.number().nonnegative("Profit margin must be non-negative").optional(),
 });
 
 /**

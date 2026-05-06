@@ -28,21 +28,30 @@ export default function NewProjectPage() {
   const [createdPatternId, setCreatedPatternId] = useState<string>('')
   const [hookRecYarnTypes, setHookRecYarnTypes] = useState<string[]>([])
   const [hookRecPatternTypes, setHookRecPatternTypes] = useState<string[]>([])
+  const [defaultCurrency, setDefaultCurrency] = useState<string>('GBP')
 
-  // Fetch patterns for the selector
+  // Fetch patterns and settings
   useEffect(() => {
-    async function fetchPatterns() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/patterns')
-        if (res.ok) {
-          const data = await res.json()
-          setPatterns(data)
+        const [patternsRes, settingsRes] = await Promise.all([
+          fetch('/api/patterns'),
+          fetch('/api/settings'),
+        ])
+        if (patternsRes.ok) {
+          setPatterns(await patternsRes.json())
+        }
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json()
+          if (settings.default_currency) {
+            setDefaultCurrency(settings.default_currency)
+          }
         }
       } catch {
-        // Patterns will just be empty if fetch fails
+        // Defaults will be used if fetch fails
       }
     }
-    fetchPatterns()
+    fetchData()
   }, [])
 
   // On success (null return after submission), redirect to /projects
@@ -203,7 +212,7 @@ export default function NewProjectPage() {
         </div>
 
         {/* Currency Selector */}
-        <CurrencySelector name="currency" />
+        <CurrencySelector name="currency" defaultValue={defaultCurrency} />
 
         {/* Hourly Rate Override */}
         <div>
@@ -213,25 +222,39 @@ export default function NewProjectPage() {
           <p className="mt-0.5 text-xs text-gray-500">
             Overrides your default hourly rate for this project&apos;s pricing.
           </p>
-          <div className="relative mt-1">
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-              $
-            </span>
-            <input
-              type="number"
-              id="hourly_rate_override"
-              name="hourly_rate_override"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              className="block w-full rounded-md border border-gray-300 py-2 pl-7 pr-3 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
-          </div>
+          <input
+            type="number"
+            id="hourly_rate_override"
+            name="hourly_rate_override"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
           {state?.fieldErrors?.hourly_rate_override && (
             <p className="mt-1 text-sm text-red-600" role="alert">
               {state.fieldErrors.hourly_rate_override[0]}
             </p>
           )}
+        </div>
+
+        {/* Profit Margin Override */}
+        <div>
+          <label htmlFor="profit_margin" className="block text-sm font-medium text-gray-700">
+            Profit Margin (%)
+          </label>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Overrides your default profit margin for this project.
+          </p>
+          <input
+            type="number"
+            id="profit_margin"
+            name="profit_margin"
+            step="0.1"
+            min="0"
+            placeholder="e.g. 20"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
         </div>
 
         {/* Pattern Selector */}

@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getDashboardMetrics, getWhatCanIMake } from '@/lib/actions/dashboard'
+import { getSettings } from '@/lib/actions/settings'
+import { formatCurrency } from '@/lib/currency'
 import DashboardSummary from '@/components/business/DashboardSummary'
 import ExpenseCategoryChart from '@/components/business/ExpenseCategoryChart'
 
@@ -12,12 +14,13 @@ export default async function BusinessPage({
   const start_date = typeof params.start_date === 'string' ? params.start_date : undefined
   const end_date = typeof params.end_date === 'string' ? params.end_date : undefined
 
-  const { data: metrics, error } = await getDashboardMetrics({
-    start_date,
-    end_date,
-  })
+  const [{ data: metrics, error }, { data: whatCanIMake }, settings] = await Promise.all([
+    getDashboardMetrics({ start_date, end_date }),
+    getWhatCanIMake(),
+    getSettings(),
+  ])
 
-  const { data: whatCanIMake } = await getWhatCanIMake()
+  const currency = settings.default_currency
 
   return (
     <div>
@@ -76,11 +79,11 @@ export default async function BusinessPage({
       {/* Dashboard metrics */}
       {metrics && (
         <div className="mt-6 space-y-6">
-          <DashboardSummary metrics={metrics} />
+          <DashboardSummary metrics={metrics} currency={currency} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Expense category chart */}
-            <ExpenseCategoryChart categoryBreakdown={metrics.expenses_by_category} />
+            <ExpenseCategoryChart categoryBreakdown={metrics.expenses_by_category} currency={currency} />
 
             {/* Top products */}
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -103,7 +106,7 @@ export default async function BusinessPage({
                         </Link>
                       </div>
                       <span className="text-sm font-medium text-gray-900">
-                        ${product.total_revenue.toFixed(2)}
+                        {formatCurrency(product.total_revenue, currency)}
                       </span>
                     </li>
                   ))}

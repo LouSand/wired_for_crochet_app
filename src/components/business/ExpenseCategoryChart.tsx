@@ -1,10 +1,12 @@
 import type { ExpenseCategory } from '@/types/business'
+import { formatCurrency } from '@/lib/currency'
 
 interface ExpenseCategoryChartProps {
   categoryBreakdown: Array<{ category: ExpenseCategory; total: number }>
+  currency?: string
 }
 
-export default function ExpenseCategoryChart({ categoryBreakdown }: ExpenseCategoryChartProps) {
+export default function ExpenseCategoryChart({ categoryBreakdown, currency = 'GBP' }: ExpenseCategoryChartProps) {
   if (categoryBreakdown.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -29,7 +31,7 @@ export default function ExpenseCategoryChart({ categoryBreakdown }: ExpenseCateg
             <div key={item.category}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-700">{label}</span>
-                <span className="font-medium text-gray-900">${item.total.toFixed(2)}</span>
+                <span className="font-medium text-gray-900">{formatCurrency(item.total, currency)}</span>
               </div>
               <div className="h-3 w-full rounded-full bg-gray-100">
                 <div

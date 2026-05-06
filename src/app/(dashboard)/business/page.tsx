@@ -214,6 +214,16 @@ export default async function BusinessPage({
               Track sales and revenue.
             </p>
           </Link>
+
+          <Link
+            href="/business/invoicing"
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:border-purple-300 hover:shadow-md transition-all"
+          >
+            <h3 className="text-lg font-semibold text-gray-900">Invoicing</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Create invoices, quotes, and track payments.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

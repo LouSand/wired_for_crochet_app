@@ -315,3 +315,66 @@ export async function getActiveSession(projectId: string): Promise<{
 
   return { data: data ?? null, error: null }
 }
+
+/**
+ * Add a manual time session (for when you forgot to press start).
+ * Accepts start_time, end_time, and optional note.
+ * Validates that end_time > start_time.
+ */
+export async function addManualTimeSession(
+  projectId: string,
+  _prevState: TimeSessionActionState,
+  formData: FormData
+): Promise<TimeSessionActionState> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'You must be logged in to add a time session.' }
+  }
+
+  const startTime = formData.get('start_time') as string
+  const endTime = formData.get('end_time') as string
+  const note = (formData.get('note') as string) || null
+
+  if (!startTime || !endTime) {
+    return { error: 'Both start time and end time are required.' }
+  }
+
+  const startDate = new Date(startTime)
+  const endDate = new Date(endTime)
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { error: 'Invalid date format.' }
+  }
+
+  if (endDate <= startDate) {
+    return { error: 'End time must be after start time.', fieldErrors: { end_time: ['End time must be after start time.'] } }
+  }
+
+  // Don't allow future dates
+  if (startDate > new Date() || endDate > new Date()) {
+    return { error: 'Cannot add time sessions in the future.', fieldErrors: { start_time: ['Cannot be in the future.'] } }
+  }
+
+  const { error } = await supabase
+    .from('time_sessions')
+    .insert({
+      project_id: projectId,
+      user_id: user.id,
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
+      note,
+    })
+
+  if (error) {
+    return { error: 'Failed to add time session. Please try again.' }
+  }
+
+  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}/time`)
+  return null
+}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTimeSessions, getActiveSession } from '@/lib/actions/time-sessions'
 import Timer from '@/components/timer/Timer'
+import ManualTimeEntry from '@/components/timer/ManualTimeEntry'
 import TimeSessionList from './TimeSessionList'
 
 /**
@@ -62,6 +63,9 @@ export default async function TimeTrackingPage({
 
       {/* Timer component */}
       <Timer projectId={id} activeSession={activeSession} />
+
+      {/* Manual time entry */}
+      <ManualTimeEntry projectId={id} />
 
       {/* Total time display */}
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">

@@ -31,6 +31,29 @@ interface ProjectCardProps {
   project: Project
 }
 
+function getDueDateColor(dateStr: string, status: string): string {
+  if (status === 'completed' || status === 'abandoned') return 'text-gray-600'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(dateStr)
+  due.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diff < 0) return 'text-red-600 font-medium'
+  if (diff <= 2) return 'text-amber-600 font-medium'
+  return 'text-gray-600'
+}
+
+function getPriorityColor(priority: number): string {
+  switch (priority) {
+    case 1: return 'text-red-600 font-medium'
+    case 2: return 'text-orange-600 font-medium'
+    case 3: return 'text-yellow-600'
+    case 4: return 'text-blue-600'
+    case 5: return 'text-gray-500'
+    default: return 'text-gray-600'
+  }
+}
+
 export default function ProjectCard({ project }: ProjectCardProps) {
   const statusColor = STATUS_COLORS[project.status] ?? 'bg-gray-100 text-gray-700'
 
@@ -61,6 +84,22 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <p>
             <span className="font-medium text-gray-700">Started:</span>{' '}
             {formatDate(project.date_started)}
+          </p>
+        )}
+        {project.estimated_completion_date && (
+          <p>
+            <span className="font-medium text-gray-700">Due:</span>{' '}
+            <span className={getDueDateColor(project.estimated_completion_date, project.status)}>
+              {formatDate(project.estimated_completion_date)}
+            </span>
+          </p>
+        )}
+        {project.priority && (
+          <p>
+            <span className="font-medium text-gray-700">Priority:</span>{' '}
+            <span className={getPriorityColor(project.priority)}>
+              {['', 'Highest', 'High', 'Medium', 'Low', 'Lowest'][project.priority]}
+            </span>
           </p>
         )}
         {project.customer_name && (

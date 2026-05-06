@@ -4,6 +4,7 @@ import { getProjects } from '@/lib/actions/projects'
 import FilterBar from '@/components/ui/FilterBar'
 import ProjectCard from '@/components/projects/ProjectCard'
 import EmptyState from '@/components/ui/EmptyState'
+import DeadlineNotifications from '@/components/projects/DeadlineNotifications'
 
 export default async function ProjectsPage({
   searchParams,
@@ -49,6 +50,13 @@ export default async function ProjectsPage({
           New Project
         </Link>
       </div>
+
+      {/* Deadline notifications */}
+      {!error && projects && projects.length > 0 && (
+        <div className="mt-6">
+          <DeadlineNotifications projects={projects} />
+        </div>
+      )}
 
       {/* Filter bar */}
       <div className="mt-6">

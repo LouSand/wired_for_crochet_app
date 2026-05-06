@@ -104,6 +104,8 @@ export interface Database {
           customer_name: string | null;
           date_started: string | null;
           date_completed: string | null;
+          estimated_completion_date: string | null;
+          priority: number | null;
           hourly_rate_override: number | null;
           pattern_id: string | null;
           currency: string;
@@ -120,6 +122,8 @@ export interface Database {
           customer_name?: string | null;
           date_started?: string | null;
           date_completed?: string | null;
+          estimated_completion_date?: string | null;
+          priority?: number | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
           currency?: string;
@@ -136,6 +140,8 @@ export interface Database {
           customer_name?: string | null;
           date_started?: string | null;
           date_completed?: string | null;
+          estimated_completion_date?: string | null;
+          priority?: number | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
           currency?: string;

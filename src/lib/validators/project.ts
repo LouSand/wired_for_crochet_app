@@ -51,6 +51,8 @@ export const projectFormSchema = z.object({
   customer_name: z.string().max(255, "Customer name must be 255 characters or less").optional(),
   date_started: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a valid ISO date (YYYY-MM-DD)").optional(),
   date_completed: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a valid ISO date (YYYY-MM-DD)").optional(),
+  estimated_completion_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a valid ISO date (YYYY-MM-DD)").optional(),
+  priority: z.number().int().min(1, "Priority must be between 1 and 5").max(5, "Priority must be between 1 and 5").optional(),
   hourly_rate_override: z.number().nonnegative("Hourly rate must be non-negative").optional(),
   pattern_id: z.string().uuid("Must be a valid UUID").optional(),
   currency: z.enum(SUPPORTED_CURRENCIES).default('USD'),

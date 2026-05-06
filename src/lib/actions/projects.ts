@@ -37,6 +37,7 @@ export async function createProject(
     customer_name: (formData.get('customer_name') as string) || undefined,
     date_started: (formData.get('date_started') as string) || undefined,
     date_completed: (formData.get('date_completed') as string) || undefined,
+    estimated_completion_date: (formData.get('estimated_completion_date') as string) || undefined,
     pattern_id: (formData.get('pattern_id') as string) || undefined,
     currency: (formData.get('currency') as string) || undefined,
   }
@@ -60,6 +61,12 @@ export async function createProject(
   const profitMarginStr = formData.get('profit_margin') as string
   if (profitMarginStr && profitMarginStr.trim() !== '') {
     rawData.profit_margin = parseFloat(profitMarginStr)
+  }
+
+  // Parse priority as number if provided
+  const priorityStr = formData.get('priority') as string
+  if (priorityStr && priorityStr.trim() !== '') {
+    rawData.priority = parseInt(priorityStr, 10)
   }
 
   // Validate with Zod
@@ -89,6 +96,8 @@ export async function createProject(
     customer_name: validated.customer_name ?? null,
     date_started: validated.date_started ?? null,
     date_completed: validated.date_completed ?? null,
+    estimated_completion_date: validated.estimated_completion_date ?? null,
+    priority: validated.priority ?? null,
     hourly_rate_override: validated.hourly_rate_override ?? null,
     pattern_id: validated.pattern_id ?? null,
     currency: validated.currency,
@@ -158,6 +167,20 @@ export async function updateProject(
   const dateCompleted = formData.get('date_completed') as string
   if (dateCompleted && dateCompleted.trim() !== '') rawData.date_completed = dateCompleted
 
+  const estimatedCompletionDate = formData.get('estimated_completion_date') as string
+  if (estimatedCompletionDate !== null && estimatedCompletionDate !== undefined) {
+    rawData.estimated_completion_date = estimatedCompletionDate.trim() !== '' ? estimatedCompletionDate : undefined
+  }
+
+  const priorityStr = formData.get('priority') as string
+  if (priorityStr !== null && priorityStr !== undefined) {
+    if (priorityStr.trim() !== '') {
+      rawData.priority = parseInt(priorityStr, 10)
+    } else {
+      rawData.priority = undefined
+    }
+  }
+
   const patternId = formData.get('pattern_id') as string
   if (patternId && patternId.trim() !== '') rawData.pattern_id = patternId
 
@@ -210,6 +233,8 @@ export async function updateProject(
   if (validated.customer_name !== undefined) updatePayload.customer_name = validated.customer_name ?? null
   if (validated.date_started !== undefined) updatePayload.date_started = validated.date_started ?? null
   if (validated.date_completed !== undefined) updatePayload.date_completed = validated.date_completed ?? null
+  if (validated.estimated_completion_date !== undefined) updatePayload.estimated_completion_date = validated.estimated_completion_date ?? null
+  if (validated.priority !== undefined) updatePayload.priority = validated.priority ?? null
   if (validated.hourly_rate_override !== undefined) updatePayload.hourly_rate_override = validated.hourly_rate_override ?? null
   if (validated.pattern_id !== undefined) updatePayload.pattern_id = validated.pattern_id ?? null
   if (validated.currency !== undefined) updatePayload.currency = validated.currency
@@ -275,7 +300,7 @@ export async function deleteProject(id: string): Promise<ProjectActionState> {
 export async function getProjects(options?: {
   status?: string
   difficulty?: string
-  sortBy?: 'date_started' | 'status' | 'difficulty' | 'created_at'
+  sortBy?: 'date_started' | 'status' | 'difficulty' | 'created_at' | 'estimated_completion_date' | 'priority'
   sortDirection?: 'asc' | 'desc'
 }): Promise<{ data: Project[] | null; error: string | null }> {
   const supabase = await createClient()

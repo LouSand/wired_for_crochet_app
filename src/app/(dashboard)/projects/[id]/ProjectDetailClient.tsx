@@ -306,6 +306,50 @@ export default function ProjectDetailClient({ project, patternTitle }: ProjectDe
                 )}
               </div>
 
+              {/* Estimated Completion Date */}
+              <div>
+                <label htmlFor="edit-estimated_completion_date" className="block text-sm font-medium text-gray-700">
+                  Due Date (Estimated Completion)
+                </label>
+                <input
+                  type="date"
+                  id="edit-estimated_completion_date"
+                  name="estimated_completion_date"
+                  defaultValue={project.estimated_completion_date ?? ''}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                {editState?.fieldErrors?.estimated_completion_date && (
+                  <p className="mt-1 text-sm text-red-600" role="alert">
+                    {editState.fieldErrors.estimated_completion_date[0]}
+                  </p>
+                )}
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700">
+                  Priority
+                </label>
+                <select
+                  id="edit-priority"
+                  name="priority"
+                  defaultValue={project.priority ?? ''}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                >
+                  <option value="">No priority</option>
+                  <option value="1">1 - Highest</option>
+                  <option value="2">2 - High</option>
+                  <option value="3">3 - Medium</option>
+                  <option value="4">4 - Low</option>
+                  <option value="5">5 - Lowest</option>
+                </select>
+                {editState?.fieldErrors?.priority && (
+                  <p className="mt-1 text-sm text-red-600" role="alert">
+                    {editState.fieldErrors.priority[0]}
+                  </p>
+                )}
+              </div>
+
               {/* Hourly Rate Override */}
               <div>
                 <label htmlFor="edit-hourly_rate_override" className="block text-sm font-medium text-gray-700">
@@ -426,6 +470,20 @@ export default function ProjectDetailClient({ project, patternTitle }: ProjectDe
               <div>
                 <dt className="text-sm font-medium text-gray-700">Hourly Rate</dt>
                 <dd className="mt-1 text-sm text-gray-600">${project.hourly_rate_override.toFixed(2)}/hr</dd>
+              </div>
+            )}
+            {project.estimated_completion_date && (
+              <div>
+                <dt className="text-sm font-medium text-gray-700">Due Date</dt>
+                <dd className="mt-1 text-sm text-gray-600">{formatDate(project.estimated_completion_date)}</dd>
+              </div>
+            )}
+            {project.priority && (
+              <div>
+                <dt className="text-sm font-medium text-gray-700">Priority</dt>
+                <dd className="mt-1 text-sm text-gray-600">
+                  {['', 'Highest', 'High', 'Medium', 'Low', 'Lowest'][project.priority]}
+                </dd>
               </div>
             )}
             {patternTitle && project.pattern_id && (

@@ -211,6 +211,55 @@ export default function NewProjectPage() {
           )}
         </div>
 
+        {/* Estimated Completion Date (Due Date) */}
+        <div>
+          <label htmlFor="estimated_completion_date" className="block text-sm font-medium text-gray-700">
+            Due Date (Estimated Completion)
+          </label>
+          <p className="mt-0.5 text-xs text-gray-500">
+            When do you need this project finished? You&apos;ll get reminders as the deadline approaches.
+          </p>
+          <input
+            type="date"
+            id="estimated_completion_date"
+            name="estimated_completion_date"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+          {state?.fieldErrors?.estimated_completion_date && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {state.fieldErrors.estimated_completion_date[0]}
+            </p>
+          )}
+        </div>
+
+        {/* Priority */}
+        <div>
+          <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
+            Priority
+          </label>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Higher priority projects appear first and get earlier deadline reminders.
+          </p>
+          <select
+            id="priority"
+            name="priority"
+            defaultValue=""
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          >
+            <option value="">No priority</option>
+            <option value="1">1 - Highest</option>
+            <option value="2">2 - High</option>
+            <option value="3">3 - Medium</option>
+            <option value="4">4 - Low</option>
+            <option value="5">5 - Lowest</option>
+          </select>
+          {state?.fieldErrors?.priority && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {state.fieldErrors.priority[0]}
+            </p>
+          )}
+        </div>
+
         {/* Currency Selector */}
         <CurrencySelector name="currency" defaultValue={defaultCurrency} />
 

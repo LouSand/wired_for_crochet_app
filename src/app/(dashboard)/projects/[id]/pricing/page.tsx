@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { calculateProjectPrice, getPricingExtras } from '@/lib/actions/pricing'
+import { getProject } from '@/lib/actions/projects'
 import PricingBreakdown from '@/components/pricing/PricingBreakdown'
 import AddExtraForm from '@/components/pricing/AddExtraForm'
 import ExtrasList from '@/components/pricing/ExtrasList'
@@ -12,9 +13,10 @@ export default async function PricingPage({
 }) {
   const { id } = await params
 
-  const [priceResult, extrasResult] = await Promise.all([
+  const [priceResult, extrasResult, projectResult] = await Promise.all([
     calculateProjectPrice(id),
     getPricingExtras(id),
+    getProject(id),
   ])
 
   if (priceResult.error && !priceResult.hourlyRateMissing && !priceResult.data) {
@@ -22,6 +24,7 @@ export default async function PricingPage({
   }
 
   const extras = extrasResult.data ?? []
+  const projectCurrency = projectResult.data?.currency ?? 'USD'
 
   return (
     <div className="space-y-8">
@@ -70,7 +73,7 @@ export default async function PricingPage({
       )}
 
       {/* Pricing breakdown */}
-      {priceResult.data && <PricingBreakdown breakdown={priceResult.data} />}
+      {priceResult.data && <PricingBreakdown breakdown={priceResult.data} currency={projectCurrency} />}
 
       {/* Extra costs section */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">

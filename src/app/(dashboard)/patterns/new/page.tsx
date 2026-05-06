@@ -5,11 +5,17 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createPattern, type PatternActionState } from '@/lib/actions/patterns'
+import { createClient } from '@/lib/supabase/client'
+import { validatePatternFile, sanitizeFileName } from '@/lib/file-validation'
 
 export default function NewPatternPage() {
   const router = useRouter()
   const hasSubmitted = useRef(false)
   const [patternType, setPatternType] = useState<'written' | 'uploaded'>('written')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [state, formAction, pending] = useActionState<PatternActionState, FormData>(
     createPattern,
     null
@@ -22,10 +28,89 @@ export default function NewPatternPage() {
     }
   }, [state, pending, router])
 
-  const handleSubmit = (formData: FormData) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null)
+    setUploadError(null)
+    const file = e.target.files?.[0] ?? null
+    if (!file) {
+      setSelectedFile(null)
+      return
+    }
+
+    const validation = validatePatternFile({ size: file.size, type: file.type })
+    if (!validation.valid) {
+      setFileError(validation.error ?? 'Invalid file')
+      setSelectedFile(null)
+      return
+    }
+
+    setSelectedFile(file)
+  }
+
+  const handleSubmit = async (formData: FormData) => {
     hasSubmitted.current = true
+    setUploadError(null)
+
+    if (patternType === 'uploaded') {
+      if (!selectedFile) {
+        setFileError('Please select a file to upload.')
+        hasSubmitted.current = false
+        return
+      }
+
+      setUploading(true)
+
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          setUploadError('You must be logged in to upload files.')
+          setUploading(false)
+          hasSubmitted.current = false
+          return
+        }
+
+        const uuid = crypto.randomUUID()
+        const sanitized = sanitizeFileName(selectedFile.name)
+        const storagePath = `${user.id}/${uuid}_${sanitized}`
+
+        const { error: storageError } = await supabase.storage
+          .from('pattern-files')
+          .upload(storagePath, selectedFile)
+
+        if (storageError) {
+          let message = 'Failed to upload file. Please try again.'
+          if (storageError.message?.includes('too large') || storageError.message?.includes('size')) {
+            message = 'File is too large. Maximum size is 20 MB.'
+          } else if (storageError.message?.includes('permission') || storageError.message?.includes('policy')) {
+            message = 'Permission denied. Please try logging in again.'
+          } else if (storageError.message?.includes('network') || storageError.message?.includes('fetch')) {
+            message = 'Network error. Please check your connection and try again.'
+          }
+          setUploadError(message)
+          setUploading(false)
+          hasSubmitted.current = false
+          return
+        }
+
+        // Add file metadata to form data for the server action
+        formData.set('file_path', storagePath)
+        formData.set('file_name', selectedFile.name)
+      } catch {
+        setUploadError('An unexpected error occurred during upload. Please try again.')
+        setUploading(false)
+        hasSubmitted.current = false
+        return
+      }
+
+      setUploading(false)
+    }
+
     formAction(formData)
   }
+
+  const isSubmitting = pending || uploading
 
   return (
     <div>
@@ -47,6 +132,13 @@ export default function NewPatternPage() {
         {state?.error && (
           <div className="rounded-md bg-red-50 p-4" role="alert">
             <p className="text-sm text-red-700">{state.error}</p>
+          </div>
+        )}
+
+        {/* Upload error */}
+        {uploadError && (
+          <div className="rounded-md bg-red-50 p-4" role="alert">
+            <p className="text-sm text-red-700">{uploadError}</p>
           </div>
         )}
 
@@ -229,29 +321,65 @@ export default function NewPatternPage() {
           </>
         )}
 
-        {/* Uploaded pattern fields */}
+        {/* Uploaded pattern fields — actual file upload */}
         {patternType === 'uploaded' && (
-          <div className="rounded-md border border-dashed border-gray-300 p-6 text-center">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-              />
-            </svg>
-            <p className="mt-2 text-sm text-gray-600">
-              File upload for patterns will be available after creating the pattern.
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Supported formats: PDF, JPEG, PNG (max 20 MB)
-            </p>
+          <div className="space-y-4">
+            <div className="rounded-md border border-dashed border-gray-300 p-6">
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                  />
+                </svg>
+                <div className="mt-4">
+                  <label
+                    htmlFor="pattern-file"
+                    className="cursor-pointer rounded-md bg-white font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2"
+                  >
+                    <span>Choose a file</span>
+                    <input
+                      id="pattern-file"
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    PDF, JPEG, or PNG up to 20 MB
+                  </p>
+                </div>
+              </div>
+
+              {/* Selected file display */}
+              {selectedFile && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-700">
+                  <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{selectedFile.name}</span>
+                  <span className="text-gray-400">
+                    ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                </div>
+              )}
+
+              {/* File validation error */}
+              {fileError && (
+                <p className="mt-3 text-center text-sm text-red-600" role="alert">
+                  {fileError}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -259,10 +387,10 @@ export default function NewPatternPage() {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            disabled={pending}
+            disabled={isSubmitting}
             className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {pending ? 'Creating...' : 'Create Pattern'}
+            {uploading ? 'Uploading...' : pending ? 'Creating...' : 'Create Pattern'}
           </button>
           <button
             type="button"

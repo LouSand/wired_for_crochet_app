@@ -88,6 +88,36 @@ export default function HookDetailClient({ hookEntry }: HookDetailClientProps) {
                 <dd className="mt-0.5 text-sm text-gray-900 capitalize">{hookEntry.material}</dd>
               </div>
             )}
+            {hookEntry.yarn_types && hookEntry.yarn_types.length > 0 && (
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Yarn Types</dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5">
+                  {hookEntry.yarn_types.map((yt) => (
+                    <span
+                      key={yt}
+                      className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 capitalize"
+                    >
+                      {yt}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
+            {hookEntry.pattern_types && hookEntry.pattern_types.length > 0 && (
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Pattern Types</dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5">
+                  {hookEntry.pattern_types.map((pt) => (
+                    <span
+                      key={pt}
+                      className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 capitalize"
+                    >
+                      {pt}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
           </dl>
         </div>
 

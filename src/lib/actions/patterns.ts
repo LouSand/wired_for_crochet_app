@@ -385,3 +385,67 @@ export async function linkPatternToProject(
   revalidatePath(`/projects/${projectId}`)
   return null
 }
+
+/**
+ * Bulk create pattern records for uploaded files.
+ * Accepts an array of file metadata objects (after files have been uploaded to storage).
+ * Creates a pattern record for each file with type='uploaded' and title derived from filename.
+ */
+export async function bulkUploadPatterns(
+  files: { name: string; path: string; size: number; mimeType: string }[]
+): Promise<{
+  results: Array<{ fileName: string; success: boolean; error?: string; patternId?: string }>
+}> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return {
+      results: files.map((f) => ({
+        fileName: f.name,
+        success: false,
+        error: 'You must be logged in to upload patterns.',
+      })),
+    }
+  }
+
+  const { deriveTitleFromFilename } = await import('@/lib/filename-title')
+
+  const results: Array<{ fileName: string; success: boolean; error?: string; patternId?: string }> = []
+
+  for (const file of files) {
+    const title = deriveTitleFromFilename(file.name)
+
+    const { data, error } = await supabase
+      .from('patterns')
+      .insert({
+        user_id: user.id,
+        title,
+        type: 'uploaded',
+        file_path: file.path,
+        file_name: file.name,
+      })
+      .select('id')
+      .single()
+
+    if (error || !data) {
+      results.push({
+        fileName: file.name,
+        success: false,
+        error: `Failed to create pattern record for ${file.name}.`,
+      })
+    } else {
+      results.push({
+        fileName: file.name,
+        success: true,
+        patternId: data.id,
+      })
+    }
+  }
+
+  revalidatePath('/patterns')
+  return { results }
+}

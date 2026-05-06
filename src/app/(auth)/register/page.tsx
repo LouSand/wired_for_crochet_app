@@ -23,6 +23,14 @@ export default function RegisterPage() {
         >
           {state.message}
         </div>
+        <div className="mb-4 rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+          <p className="font-medium">What to do next:</p>
+          <ol className="mt-2 list-decimal list-inside space-y-1">
+            <li>Open your email inbox</li>
+            <li>Click the verification link in the email from Supabase</li>
+            <li>Once verified, come back here and sign in</li>
+          </ol>
+        </div>
         <p className="text-center text-sm text-gray-600">
           <Link
             href="/login"

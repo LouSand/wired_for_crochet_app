@@ -1,13 +1,11 @@
 'use client'
 
 import type { PricingBreakdown as PricingBreakdownType } from '@/types/forms'
+import { formatCurrency } from '@/lib/currency'
 
 interface PricingBreakdownProps {
   breakdown: PricingBreakdownType
-}
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`
+  currency?: string
 }
 
 function formatHours(hours: number): string {
@@ -18,7 +16,7 @@ function formatHours(hours: number): string {
   return `${h}h ${m}m`
 }
 
-export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
+export default function PricingBreakdown({ breakdown, currency = 'USD' }: PricingBreakdownProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Price Breakdown</h2>
@@ -28,7 +26,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Material Cost</span>
           <span className="text-sm font-medium text-gray-900">
-            {formatCurrency(breakdown.material_cost)}
+            {formatCurrency(breakdown.material_cost, currency)}
           </span>
         </div>
 
@@ -37,11 +35,11 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
           <div className="text-sm text-gray-600">
             <span>Time Cost</span>
             <span className="ml-1 text-xs text-gray-400">
-              ({formatHours(breakdown.total_hours)} × {formatCurrency(breakdown.hourly_rate)}/hr)
+              ({formatHours(breakdown.total_hours)} × {formatCurrency(breakdown.hourly_rate, currency)}/hr)
             </span>
           </div>
           <span className="text-sm font-medium text-gray-900">
-            {formatCurrency(breakdown.time_cost)}
+            {formatCurrency(breakdown.time_cost, currency)}
           </span>
         </div>
 
@@ -51,7 +49,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Extra Costs</span>
               <span className="text-sm font-medium text-gray-900">
-                {formatCurrency(breakdown.extras_total)}
+                {formatCurrency(breakdown.extras_total, currency)}
               </span>
             </div>
             <div className="ml-4 space-y-0.5">
@@ -61,7 +59,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
                   className="flex items-center justify-between text-xs text-gray-400"
                 >
                   <span>{extra.description}</span>
-                  <span>{formatCurrency(extra.amount)}</span>
+                  <span>{formatCurrency(extra.amount, currency)}</span>
                 </div>
               ))}
             </div>
@@ -72,7 +70,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
         <div className="border-t border-gray-100 pt-2 flex items-center justify-between">
           <span className="text-sm text-gray-600">Subtotal</span>
           <span className="text-sm font-medium text-gray-900">
-            {formatCurrency(breakdown.subtotal)}
+            {formatCurrency(breakdown.subtotal, currency)}
           </span>
         </div>
 
@@ -90,7 +88,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
             )}
           </div>
           <span className="text-sm font-medium text-gray-900">
-            {formatCurrency(breakdown.profit_margin_amount)}
+            {formatCurrency(breakdown.profit_margin_amount, currency)}
           </span>
         </div>
 
@@ -100,7 +98,7 @@ export default function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
             Suggested Price
           </span>
           <span className="text-lg font-bold text-purple-700">
-            {formatCurrency(breakdown.total)}
+            {formatCurrency(breakdown.total, currency)}
           </span>
         </div>
       </div>

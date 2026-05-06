@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getPatterns } from '@/lib/actions/patterns'
 import EmptyState from '@/components/ui/EmptyState'
+import BulkPatternUploader from '@/components/patterns/BulkPatternUploader'
 
 export default async function PatternsPage() {
   const { data: patterns, error } = await getPatterns()
@@ -25,6 +26,11 @@ export default async function PatternsPage() {
           </svg>
           New Pattern
         </Link>
+      </div>
+
+      {/* Bulk uploader */}
+      <div className="mt-6">
+        <BulkPatternUploader />
       </div>
 
       {/* Pattern list */}

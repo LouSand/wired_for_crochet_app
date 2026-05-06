@@ -29,6 +29,7 @@ describe("projectFormSchema", () => {
       date_completed: "2024-06-01",
       hourly_rate_override: 25.5,
       pattern_id: "550e8400-e29b-41d4-a716-446655440000",
+      currency: "USD" as const,
     };
     const result = projectFormSchema.safeParse(input);
     expect(result.success).toBe(true);

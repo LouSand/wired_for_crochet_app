@@ -38,6 +38,16 @@ export async function createProject(
     date_started: (formData.get('date_started') as string) || undefined,
     date_completed: (formData.get('date_completed') as string) || undefined,
     pattern_id: (formData.get('pattern_id') as string) || undefined,
+    currency: (formData.get('currency') as string) || undefined,
+  }
+
+  // Handle mark-as-finished logic
+  const markAsFinished = formData.get('mark_as_finished') as string
+  if (markAsFinished === 'true') {
+    rawData.status = 'completed'
+    if (!rawData.date_completed) {
+      rawData.date_completed = new Date().toISOString().split('T')[0]
+    }
   }
 
   // Parse hourly_rate_override as number if provided
@@ -75,6 +85,7 @@ export async function createProject(
     date_completed: validated.date_completed ?? null,
     hourly_rate_override: validated.hourly_rate_override ?? null,
     pattern_id: validated.pattern_id ?? null,
+    currency: validated.currency,
   })
 
   if (error) {
@@ -143,9 +154,24 @@ export async function updateProject(
   const patternId = formData.get('pattern_id') as string
   if (patternId && patternId.trim() !== '') rawData.pattern_id = patternId
 
+  const currency = formData.get('currency') as string
+  if (currency && currency.trim() !== '') rawData.currency = currency
+
   const hourlyRateStr = formData.get('hourly_rate_override') as string
   if (hourlyRateStr && hourlyRateStr.trim() !== '') {
     rawData.hourly_rate_override = parseFloat(hourlyRateStr)
+  }
+
+  // Handle mark-as-finished logic
+  const markAsFinished = formData.get('mark_as_finished') as string
+  if (markAsFinished === 'true') {
+    rawData.status = 'completed'
+    if (!rawData.date_completed) {
+      rawData.date_completed = new Date().toISOString().split('T')[0]
+    }
+  } else if (markAsFinished === 'false') {
+    // Revert: clear date_completed (status should be set by the form's status field)
+    rawData.date_completed = undefined
   }
 
   // Validate with partial schema
@@ -179,6 +205,7 @@ export async function updateProject(
   if (validated.date_completed !== undefined) updatePayload.date_completed = validated.date_completed ?? null
   if (validated.hourly_rate_override !== undefined) updatePayload.hourly_rate_override = validated.hourly_rate_override ?? null
   if (validated.pattern_id !== undefined) updatePayload.pattern_id = validated.pattern_id ?? null
+  if (validated.currency !== undefined) updatePayload.currency = validated.currency
 
   const { error } = await supabase
     .from('projects')

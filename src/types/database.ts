@@ -106,6 +106,7 @@ export interface Database {
           date_completed: string | null;
           hourly_rate_override: number | null;
           pattern_id: string | null;
+          currency: string;
           created_at: string;
           updated_at: string;
         };
@@ -121,6 +122,7 @@ export interface Database {
           date_completed?: string | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
+          currency?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -136,6 +138,7 @@ export interface Database {
           date_completed?: string | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
+          currency?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -300,6 +303,8 @@ export interface Database {
           type: string | null;
           brand: string | null;
           material: string | null;
+          yarn_types: string[] | null;
+          pattern_types: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -310,6 +315,8 @@ export interface Database {
           type?: string | null;
           brand?: string | null;
           material?: string | null;
+          yarn_types?: string[] | null;
+          pattern_types?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -320,6 +327,8 @@ export interface Database {
           type?: string | null;
           brand?: string | null;
           material?: string | null;
+          yarn_types?: string[] | null;
+          pattern_types?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };

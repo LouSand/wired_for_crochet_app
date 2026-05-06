@@ -1,6 +1,20 @@
 import { z } from "zod";
 
 /**
+ * Yarn type options for hook compatibility metadata.
+ */
+export const YARN_TYPE_OPTIONS = [
+  'cotton', 'acrylic', 'chunky', 'wool', 'bamboo', 'silk', 'polyester'
+] as const;
+
+/**
+ * Pattern type options for hook compatibility metadata.
+ */
+export const PATTERN_TYPE_OPTIONS = [
+  'amigurumi', 'blankets', 'garments', 'lace', 'accessories', 'home decor'
+] as const;
+
+/**
  * Zod schema for creating a new hook entry.
  * Used by both React Hook Form (client-side) and Server Actions (server-side).
  *
@@ -9,6 +23,8 @@ import { z } from "zod";
  * - type: optional, varchar(50) — e.g., "inline", "tapered"
  * - brand: optional, varchar(255)
  * - material: optional, varchar(100) — e.g., "aluminum", "bamboo", "steel"
+ * - yarn_types: optional, JSONB array of yarn type strings
+ * - pattern_types: optional, JSONB array of pattern type strings
  */
 export const hookFormSchema = z.object({
   size: z
@@ -27,6 +43,8 @@ export const hookFormSchema = z.object({
     .string()
     .max(100, "Material must be 100 characters or less")
     .optional(),
+  yarn_types: z.array(z.string().max(50, "Each yarn type must be 50 characters or less")).max(20, "Maximum 20 yarn types allowed").default([]),
+  pattern_types: z.array(z.string().max(50, "Each pattern type must be 50 characters or less")).max(20, "Maximum 20 pattern types allowed").default([]),
 });
 
 /**

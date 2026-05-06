@@ -2,9 +2,15 @@
 
 import { useActionState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createProject, type ProjectActionState } from '@/lib/actions/projects'
 import { PROJECT_STATUSES, PROJECT_DIFFICULTIES } from '@/lib/validators/project'
+import CurrencySelector from '@/components/projects/CurrencySelector'
+import PatternSelector from '@/components/projects/PatternSelector'
+import InlinePatternForm from '@/components/projects/InlinePatternForm'
+import MarkAsFinishedToggle from '@/components/projects/MarkAsFinishedToggle'
+import HookRecommendations from '@/components/hooks/HookRecommendations'
+import type { Pattern } from '@/types/database'
 
 function formatLabel(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -17,6 +23,27 @@ export default function NewProjectPage() {
     createProject,
     null
   )
+  const [patterns, setPatterns] = useState<Pattern[]>([])
+  const [showInlinePattern, setShowInlinePattern] = useState(false)
+  const [createdPatternId, setCreatedPatternId] = useState<string>('')
+  const [hookRecYarnTypes, setHookRecYarnTypes] = useState<string[]>([])
+  const [hookRecPatternTypes, setHookRecPatternTypes] = useState<string[]>([])
+
+  // Fetch patterns for the selector
+  useEffect(() => {
+    async function fetchPatterns() {
+      try {
+        const res = await fetch('/api/patterns')
+        if (res.ok) {
+          const data = await res.json()
+          setPatterns(data)
+        }
+      } catch {
+        // Patterns will just be empty if fetch fails
+      }
+    }
+    fetchPatterns()
+  }, [])
 
   // On success (null return after submission), redirect to /projects
   useEffect(() => {
@@ -28,6 +55,16 @@ export default function NewProjectPage() {
   const handleSubmit = (formData: FormData) => {
     hasSubmitted.current = true
     formAction(formData)
+  }
+
+  const handlePatternCreated = (patternId: string) => {
+    setCreatedPatternId(patternId)
+    setShowInlinePattern(false)
+    // Add a temporary pattern to the list so it shows as selected
+    setPatterns((prev) => [
+      { id: patternId, title: 'New Pattern (just created)', user_id: '', type: 'written', introduction: null, materials_list: null, hook_size: null, yarn_info: null, gauge: null, abbreviations: null, instructions: null, notes: null, file_path: null, file_name: null, created_at: '', updated_at: '' },
+      ...prev,
+    ])
   }
 
   return (
@@ -165,6 +202,9 @@ export default function NewProjectPage() {
           )}
         </div>
 
+        {/* Currency Selector */}
+        <CurrencySelector name="currency" />
+
         {/* Hourly Rate Override */}
         <div>
           <label htmlFor="hourly_rate_override" className="block text-sm font-medium text-gray-700">
@@ -193,6 +233,30 @@ export default function NewProjectPage() {
             </p>
           )}
         </div>
+
+        {/* Pattern Selector */}
+        <PatternSelector
+          patterns={patterns}
+          defaultValue={createdPatternId}
+          onCreateNew={() => setShowInlinePattern(true)}
+        />
+
+        {/* Inline Pattern Form */}
+        {showInlinePattern && (
+          <InlinePatternForm
+            onPatternCreated={handlePatternCreated}
+            onCancel={() => setShowInlinePattern(false)}
+          />
+        )}
+
+        {/* Mark as Finished Toggle */}
+        <MarkAsFinishedToggle />
+
+        {/* Hook Recommendations */}
+        <HookRecommendations
+          yarnTypes={hookRecYarnTypes}
+          patternTypes={hookRecPatternTypes}
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

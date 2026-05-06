@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 /**
+ * Supported currency codes (ISO 4217).
+ */
+export const SUPPORTED_CURRENCIES = ['USD', 'GBP', 'EUR', 'AUD', 'CAD', 'NZD'] as const;
+
+/**
  * Project status enum values.
  * Matches the ProjectStatus type in src/types/forms.ts.
  */
@@ -48,6 +53,7 @@ export const projectFormSchema = z.object({
   date_completed: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be a valid ISO date (YYYY-MM-DD)").optional(),
   hourly_rate_override: z.number().nonnegative("Hourly rate must be non-negative").optional(),
   pattern_id: z.string().uuid("Must be a valid UUID").optional(),
+  currency: z.enum(SUPPORTED_CURRENCIES).default('USD'),
 });
 
 /**

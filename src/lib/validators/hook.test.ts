@@ -20,6 +20,8 @@ describe("hookFormSchema", () => {
       type: "inline",
       brand: "Clover",
       material: "aluminum",
+      yarn_types: [] as string[],
+      pattern_types: [] as string[],
     };
     const result = hookFormSchema.safeParse(input);
     expect(result.success).toBe(true);

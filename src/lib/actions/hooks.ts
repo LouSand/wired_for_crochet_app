@@ -28,11 +28,25 @@ export async function createHookEntry(
     return { error: 'You must be logged in to add a hook entry.' }
   }
 
+  // Parse yarn_types and pattern_types from JSON strings
+  const yarnTypesRaw = formData.get('yarn_types') as string
+  const patternTypesRaw = formData.get('pattern_types') as string
+  let yarnTypes: string[] = []
+  let patternTypes: string[] = []
+  try {
+    yarnTypes = yarnTypesRaw ? JSON.parse(yarnTypesRaw) : []
+  } catch { yarnTypes = [] }
+  try {
+    patternTypes = patternTypesRaw ? JSON.parse(patternTypesRaw) : []
+  } catch { patternTypes = [] }
+
   const rawData: Record<string, unknown> = {
     size: formData.get('size') as string,
     type: (formData.get('type') as string) || undefined,
     brand: (formData.get('brand') as string) || undefined,
     material: (formData.get('material') as string) || undefined,
+    yarn_types: yarnTypes,
+    pattern_types: patternTypes,
   }
 
   const result = hookFormSchema.safeParse(rawData)
@@ -57,6 +71,8 @@ export async function createHookEntry(
     type: validated.type ?? null,
     brand: validated.brand ?? null,
     material: validated.material ?? null,
+    yarn_types: validated.yarn_types,
+    pattern_types: validated.pattern_types,
   })
 
   if (error) {
@@ -97,6 +113,18 @@ export async function updateHookEntry(
     return { error: 'Hook entry not found.' }
   }
 
+  // Parse yarn_types and pattern_types from JSON strings
+  const yarnTypesRaw = formData.get('yarn_types') as string
+  const patternTypesRaw = formData.get('pattern_types') as string
+  let yarnTypes: string[] | undefined
+  let patternTypes: string[] | undefined
+  try {
+    yarnTypes = yarnTypesRaw ? JSON.parse(yarnTypesRaw) : undefined
+  } catch { yarnTypes = undefined }
+  try {
+    patternTypes = patternTypesRaw ? JSON.parse(patternTypesRaw) : undefined
+  } catch { patternTypes = undefined }
+
   const rawData: Record<string, unknown> = {}
 
   const size = formData.get('size') as string
@@ -110,6 +138,9 @@ export async function updateHookEntry(
 
   const material = formData.get('material') as string
   if (material !== null && material !== undefined) rawData.material = material || undefined
+
+  if (yarnTypes !== undefined) rawData.yarn_types = yarnTypes
+  if (patternTypes !== undefined) rawData.pattern_types = patternTypes
 
   const result = hookUpdateSchema.safeParse(rawData)
 
@@ -135,6 +166,8 @@ export async function updateHookEntry(
   if (validated.type !== undefined) updatePayload.type = validated.type ?? null
   if (validated.brand !== undefined) updatePayload.brand = validated.brand ?? null
   if (validated.material !== undefined) updatePayload.material = validated.material ?? null
+  if (validated.yarn_types !== undefined) updatePayload.yarn_types = validated.yarn_types
+  if (validated.pattern_types !== undefined) updatePayload.pattern_types = validated.pattern_types
 
   const { error } = await supabase
     .from('hook_entries')
@@ -379,4 +412,51 @@ export async function getHookUsagesForProject(projectId: string): Promise<{
   }
 
   return { data: data as (HookUsage & { hook_entries: HookEntry })[], error: null }
+}
+
+/**
+ * Get hook recommendations based on yarn types and/or pattern types.
+ * Uses JSONB containment queries to find hooks with matching compatibility metadata.
+ */
+export async function getHookRecommendations(options: {
+  yarnTypes?: string[]
+  patternTypes?: string[]
+}): Promise<{ data: HookEntry[] | null; error: string | null }> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { data: null, error: 'You must be logged in to get hook recommendations.' }
+  }
+
+  const { yarnTypes = [], patternTypes = [] } = options
+
+  // If no filters provided, return empty
+  if (yarnTypes.length === 0 && patternTypes.length === 0) {
+    return { data: [], error: null }
+  }
+
+  // Build OR filter for JSONB containment
+  const filters: string[] = []
+  if (yarnTypes.length > 0) {
+    filters.push(`yarn_types.cs.${JSON.stringify(yarnTypes)}`)
+  }
+  if (patternTypes.length > 0) {
+    filters.push(`pattern_types.cs.${JSON.stringify(patternTypes)}`)
+  }
+
+  const { data, error } = await supabase
+    .from('hook_entries')
+    .select('*')
+    .eq('user_id', user.id)
+    .or(filters.join(','))
+
+  if (error) {
+    return { data: null, error: 'Failed to fetch hook recommendations.' }
+  }
+
+  return { data, error: null }
 }

@@ -32,9 +32,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface ProjectDetailClientProps {
   project: Project
+  patternTitle?: string | null
 }
 
-export default function ProjectDetailClient({ project }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({ project, patternTitle }: ProjectDetailClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)
@@ -419,6 +420,19 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
               <div>
                 <dt className="text-sm font-medium text-gray-700">Hourly Rate</dt>
                 <dd className="mt-1 text-sm text-gray-600">${project.hourly_rate_override.toFixed(2)}/hr</dd>
+              </div>
+            )}
+            {patternTitle && project.pattern_id && (
+              <div>
+                <dt className="text-sm font-medium text-gray-700">Linked Pattern</dt>
+                <dd className="mt-1 text-sm">
+                  <Link
+                    href={`/patterns/${project.pattern_id}`}
+                    className="text-purple-600 hover:text-purple-800 hover:underline"
+                  >
+                    {patternTitle}
+                  </Link>
+                </dd>
               </div>
             )}
             <div>

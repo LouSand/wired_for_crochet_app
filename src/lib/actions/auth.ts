@@ -28,6 +28,10 @@ export async function login(
   })
 
   if (error) {
+    // Check if the error is about email not being confirmed
+    if (error.message?.toLowerCase().includes('email not confirmed')) {
+      return { error: 'Please verify your email before signing in. Check your inbox for the verification link.' }
+    }
     // Generic error message — don't reveal which field is incorrect
     return { error: 'Invalid email or password.' }
   }
@@ -75,7 +79,7 @@ export async function register(
 
   return {
     message:
-      'Registration successful! Please check your email to verify your account.',
+      'Account created successfully! Please check your email inbox (and spam folder) for a verification link. You must verify your email before you can sign in.',
   }
 }
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { createHookEntry, type HookActionState } from '@/lib/actions/hooks'
+import HookCompatibilityFields from '@/components/hooks/HookCompatibilityFields'
 
 export default function NewHookPage() {
   const router = useRouter()
@@ -125,6 +126,9 @@ export default function NewHookPage() {
             </p>
           )}
         </div>
+
+        {/* Compatibility Metadata */}
+        <HookCompatibilityFields />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

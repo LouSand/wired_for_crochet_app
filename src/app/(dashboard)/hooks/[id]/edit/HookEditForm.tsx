@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { updateHookEntry, type HookActionState } from '@/lib/actions/hooks'
+import HookCompatibilityFields from '@/components/hooks/HookCompatibilityFields'
 import type { HookEntry } from '@/types/database'
 
 interface HookEditFormProps {
@@ -141,6 +142,12 @@ export default function HookEditForm({ hookEntry }: HookEditFormProps) {
             </p>
           )}
         </div>
+
+        {/* Compatibility Metadata */}
+        <HookCompatibilityFields
+          yarnTypes={hookEntry.yarn_types ?? []}
+          patternTypes={hookEntry.pattern_types ?? []}
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

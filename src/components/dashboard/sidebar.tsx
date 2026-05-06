@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/yarn', label: 'Yarn' },
   { href: '/hooks', label: 'Hooks' },
   { href: '/patterns', label: 'Patterns' },
+  { href: '/business', label: 'Business' },
   { href: '/settings', label: 'Settings' },
 ]
 

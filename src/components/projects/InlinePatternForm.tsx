@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useActionState, useEffect, useRef } from 'react'
+import { useState, useTransition } from 'react'
 import { createPattern, type PatternActionState } from '@/lib/actions/patterns'
 
 interface InlinePatternFormProps {
@@ -9,26 +9,56 @@ interface InlinePatternFormProps {
 }
 
 /**
- * Collapsible inline form for creating a pattern directly from the project form.
- * On successful creation, calls onPatternCreated with the new pattern ID.
+ * Inline pattern creation panel (NOT a <form> — avoids nested form issue).
+ * Collects data via state and calls the server action manually.
  */
 export default function InlinePatternForm({ onPatternCreated, onCancel }: InlinePatternFormProps) {
-  const hasSubmitted = useRef(false)
-  const [state, formAction, pending] = useActionState<PatternActionState, FormData>(
-    createPattern,
-    null
-  )
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
-  // When pattern is created successfully, notify parent
-  useEffect(() => {
-    if (hasSubmitted.current && state?.patternId) {
-      onPatternCreated(state.patternId)
+  const [title, setTitle] = useState('')
+  const [introduction, setIntroduction] = useState('')
+  const [materialsList, setMaterialsList] = useState('')
+  const [hookSize, setHookSize] = useState('')
+  const [yarnInfo, setYarnInfo] = useState('')
+  const [gauge, setGauge] = useState('')
+  const [abbreviations, setAbbreviations] = useState('')
+  const [instructions, setInstructions] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const handleCreate = () => {
+    setError(null)
+    setFieldErrors({})
+
+    if (!title.trim()) {
+      setFieldErrors({ title: ['Pattern title is required.'] })
+      return
     }
-  }, [state, onPatternCreated])
 
-  const handleSubmit = (formData: FormData) => {
-    hasSubmitted.current = true
-    formAction(formData)
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.set('title', title)
+      formData.set('type', 'written')
+      if (introduction) formData.set('introduction', introduction)
+      if (materialsList) formData.set('materials_list', materialsList)
+      if (hookSize) formData.set('hook_size', hookSize)
+      if (yarnInfo) formData.set('yarn_info', yarnInfo)
+      if (gauge) formData.set('gauge', gauge)
+      if (abbreviations) formData.set('abbreviations', abbreviations)
+      if (instructions) formData.set('instructions', instructions)
+      if (notes) formData.set('notes', notes)
+
+      const result: PatternActionState = await createPattern(null, formData)
+
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.fieldErrors) {
+        setFieldErrors(result.fieldErrors)
+      } else if (result?.patternId) {
+        onPatternCreated(result.patternId)
+      }
+    })
   }
 
   return (
@@ -44,15 +74,12 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
         </button>
       </div>
 
-      <form action={handleSubmit} className="space-y-3">
-        {state?.error && (
+      <div className="space-y-3">
+        {error && (
           <div className="rounded-md bg-red-50 p-3" role="alert">
-            <p className="text-sm text-red-700">{state.error}</p>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
-
-        {/* Hidden type field - inline patterns are always "written" */}
-        <input type="hidden" name="type" value="written" />
 
         {/* Title */}
         <div>
@@ -62,12 +89,12 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
           <input
             type="text"
             id="inline-pattern-title"
-            name="title"
-            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
-          {state?.fieldErrors?.title && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.title[0]}</p>
+          {fieldErrors.title && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.title[0]}</p>
           )}
         </div>
 
@@ -78,7 +105,8 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
           </label>
           <textarea
             id="inline-pattern-introduction"
-            name="introduction"
+            value={introduction}
+            onChange={(e) => setIntroduction(e.target.value)}
             rows={2}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
@@ -91,14 +119,14 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
           </label>
           <textarea
             id="inline-pattern-materials"
-            name="materials_list"
+            value={materialsList}
+            onChange={(e) => setMaterialsList(e.target.value)}
             rows={2}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Hook Size */}
           <div>
             <label htmlFor="inline-pattern-hook-size" className="block text-sm font-medium text-gray-700">
               Hook Size
@@ -106,12 +134,11 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
             <input
               type="text"
               id="inline-pattern-hook-size"
-              name="hook_size"
+              value={hookSize}
+              onChange={(e) => setHookSize(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
           </div>
-
-          {/* Yarn Info */}
           <div>
             <label htmlFor="inline-pattern-yarn-info" className="block text-sm font-medium text-gray-700">
               Yarn Info
@@ -119,12 +146,11 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
             <input
               type="text"
               id="inline-pattern-yarn-info"
-              name="yarn_info"
+              value={yarnInfo}
+              onChange={(e) => setYarnInfo(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
           </div>
-
-          {/* Gauge */}
           <div>
             <label htmlFor="inline-pattern-gauge" className="block text-sm font-medium text-gray-700">
               Gauge
@@ -132,12 +158,11 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
             <input
               type="text"
               id="inline-pattern-gauge"
-              name="gauge"
+              value={gauge}
+              onChange={(e) => setGauge(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
           </div>
-
-          {/* Abbreviations */}
           <div>
             <label htmlFor="inline-pattern-abbreviations" className="block text-sm font-medium text-gray-700">
               Abbreviations
@@ -145,7 +170,8 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
             <input
               type="text"
               id="inline-pattern-abbreviations"
-              name="abbreviations"
+              value={abbreviations}
+              onChange={(e) => setAbbreviations(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
           </div>
@@ -158,7 +184,8 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
           </label>
           <textarea
             id="inline-pattern-instructions"
-            name="instructions"
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
             rows={3}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
@@ -171,7 +198,8 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
           </label>
           <textarea
             id="inline-pattern-notes"
-            name="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
             rows={2}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
@@ -179,11 +207,12 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
 
         <div className="flex items-center gap-3 pt-1">
           <button
-            type="submit"
-            disabled={pending}
+            type="button"
+            onClick={handleCreate}
+            disabled={isPending}
             className="inline-flex items-center rounded-md bg-purple-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {pending ? 'Creating...' : 'Create Pattern'}
+            {isPending ? 'Creating...' : 'Create Pattern'}
           </button>
           <button
             type="button"
@@ -193,7 +222,7 @@ export default function InlinePatternForm({ onPatternCreated, onCancel }: Inline
             Cancel
           </button>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

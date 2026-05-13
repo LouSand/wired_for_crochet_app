@@ -474,7 +474,7 @@ function CounterRow({ counter }: { counter: Counter }) {
   )
 }
 
-// ─── Pattern Viewer ──────────────────────────────────────────────────────────
+// ─── Pattern Viewer with Annotations ─────────────────────────────────────────
 
 function PatternViewer({
   pattern,
@@ -484,10 +484,44 @@ function PatternViewer({
   patternFileUrl: string | null
 }) {
   const [expanded, setExpanded] = useState(true)
+  const [zoom, setZoom] = useState(100)
+  const [highlights, setHighlights] = useState<Array<{ id: string; row: number; color: string; note: string }>>([])
+  const [currentRow, setCurrentRow] = useState<number | null>(null)
+  const [showAnnotationForm, setShowAnnotationForm] = useState(false)
+  const [annotationNote, setAnnotationNote] = useState('')
+  const [annotationColor, setAnnotationColor] = useState('#fef08a') // yellow
 
   const isUploaded = pattern.type === 'uploaded'
   const isPdf = pattern.file_name?.toLowerCase().endsWith('.pdf')
   const isImage = pattern.file_name?.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+
+  // Split written pattern into rows for highlighting
+  const patternRows = pattern.instructions?.split('\n') ?? []
+
+  const handleAddHighlight = () => {
+    if (currentRow === null) return
+    const newHighlight = {
+      id: crypto.randomUUID(),
+      row: currentRow,
+      color: annotationColor,
+      note: annotationNote,
+    }
+    setHighlights((prev) => [...prev, newHighlight])
+    setAnnotationNote('')
+    setShowAnnotationForm(false)
+  }
+
+  const handleRemoveHighlight = (id: string) => {
+    setHighlights((prev) => prev.filter((h) => h.id !== id))
+  }
+
+  const highlightColors = [
+    { value: '#fef08a', label: 'Yellow' },
+    { value: '#bbf7d0', label: 'Green' },
+    { value: '#bfdbfe', label: 'Blue' },
+    { value: '#fecaca', label: 'Red' },
+    { value: '#e9d5ff', label: 'Purple' },
+  ]
 
   return (
     <div className="rounded-2xl border-2 border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -520,81 +554,216 @@ function PatternViewer({
 
       {/* Content */}
       {expanded && (
-        <div className="border-t border-gray-100 p-4">
-          {isUploaded && patternFileUrl ? (
-            <div>
-              {isPdf && (
-                <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                  <iframe
-                    src={patternFileUrl}
-                    className="w-full h-[400px] sm:h-[500px] lg:h-[600px]"
-                    title={`Pattern: ${pattern.title}`}
-                  />
-                </div>
-              )}
-              {isImage && (
-                <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={patternFileUrl}
-                    alt={`Pattern: ${pattern.title}`}
-                    className="max-w-full max-h-[600px] object-contain"
-                  />
-                </div>
-              )}
-              {!isPdf && !isImage && (
-                <div className="text-center py-6">
-                  <p className="text-sm text-gray-500 mb-2">File: {pattern.file_name}</p>
-                  <a
-                    href={patternFileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[44px]"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Download File
-                  </a>
-                </div>
-              )}
+        <div className="border-t border-gray-100">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50 flex-wrap">
+            {/* Zoom controls */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(50, z - 25))}
+                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+              <span className="text-xs text-gray-600 min-w-[3rem] text-center">{zoom}%</span>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(200, z + 25))}
+                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
+                aria-label="Zoom in"
+              >
+                +
+              </button>
             </div>
-          ) : pattern.instructions ? (
-            <div className="prose prose-sm max-w-none">
-              <div className="max-h-[400px] overflow-y-auto rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">
-                {pattern.instructions}
-              </div>
-              {pattern.abbreviations && (
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-xs font-medium text-purple-600 hover:text-purple-700">
-                    Abbreviations
-                  </summary>
-                  <div className="mt-2 rounded-lg bg-purple-50 p-3 text-xs text-gray-700 whitespace-pre-wrap">
-                    {pattern.abbreviations}
+
+            <div className="h-5 w-px bg-gray-300" />
+
+            {/* Highlight color picker */}
+            <div className="flex items-center gap-1">
+              {highlightColors.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setAnnotationColor(c.value)}
+                  className={`h-6 w-6 rounded-full border-2 transition-all min-h-[24px] min-w-[24px] ${
+                    annotationColor === c.value ? 'border-gray-800 scale-110' : 'border-gray-300'
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                  aria-label={`Highlight color: ${c.label}`}
+                  title={c.label}
+                />
+              ))}
+            </div>
+
+            <div className="h-5 w-px bg-gray-300" />
+
+            {/* Clear highlights */}
+            {highlights.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setHighlights([])}
+                className="text-xs text-red-600 hover:text-red-700 font-medium min-h-[32px] px-2"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+
+          {/* Pattern content */}
+          <div className="p-4">
+            {isUploaded && patternFileUrl ? (
+              <div>
+                {isPdf && (
+                  <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                    <iframe
+                      src={patternFileUrl}
+                      className="w-full transition-all duration-200"
+                      style={{ height: `${Math.round(500 * (zoom / 100))}px` }}
+                      title={`Pattern: ${pattern.title}`}
+                    />
                   </div>
-                </details>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-gray-500">No pattern content available</p>
+                )}
+                {isImage && (
+                  <div className="rounded-lg overflow-auto border border-gray-200 bg-gray-50 max-h-[600px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={patternFileUrl}
+                      alt={`Pattern: ${pattern.title}`}
+                      className="object-contain transition-all duration-200 mx-auto"
+                      style={{ width: `${zoom}%` }}
+                    />
+                  </div>
+                )}
+                {!isPdf && !isImage && (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-gray-500 mb-2">File: {pattern.file_name}</p>
+                    <a
+                      href={patternFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[44px]"
+                    >
+                      Download File
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : patternRows.length > 0 ? (
+              <div>
+                {/* Written pattern with row highlighting */}
+                <div
+                  className="max-h-[400px] overflow-y-auto rounded-lg bg-gray-50 border border-gray-200 font-mono text-sm leading-relaxed transition-all duration-200"
+                  style={{ fontSize: `${Math.round(14 * (zoom / 100))}px` }}
+                >
+                  {patternRows.map((row, idx) => {
+                    const highlight = highlights.find((h) => h.row === idx)
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex items-start gap-2 px-3 py-1 cursor-pointer hover:bg-gray-100 transition-colors border-l-4 ${
+                          currentRow === idx ? 'border-l-purple-500' : 'border-l-transparent'
+                        }`}
+                        style={highlight ? { backgroundColor: highlight.color } : undefined}
+                        onClick={() => {
+                          setCurrentRow(idx)
+                          setShowAnnotationForm(true)
+                        }}
+                      >
+                        <span className="text-[10px] text-gray-400 select-none min-w-[2rem] text-right pt-0.5 shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="text-gray-800 whitespace-pre-wrap flex-1">
+                          {row || '\u00A0'}
+                        </span>
+                        {highlight?.note && (
+                          <span className="text-[10px] text-gray-500 italic shrink-0 max-w-[100px] truncate" title={highlight.note}>
+                            💬 {highlight.note}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Annotation form */}
+                {showAnnotationForm && currentRow !== null && (
+                  <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50 p-3 space-y-2">
+                    <p className="text-xs font-medium text-purple-700">
+                      Annotate row {currentRow + 1}
+                    </p>
+                    <input
+                      type="text"
+                      value={annotationNote}
+                      onChange={(e) => setAnnotationNote(e.target.value)}
+                      placeholder="Add a note (optional)..."
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAddHighlight}
+                        className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 min-h-[32px]"
+                      >
+                        Highlight Row
+                      </button>
+                      {highlights.find((h) => h.row === currentRow) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const h = highlights.find((h) => h.row === currentRow)
+                            if (h) handleRemoveHighlight(h.id)
+                          }}
+                          className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 min-h-[32px]"
+                        >
+                          Remove
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowAnnotationForm(false)}
+                        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 min-h-[32px]"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Abbreviations */}
+                {pattern.abbreviations && (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs font-medium text-purple-600 hover:text-purple-700">
+                      Abbreviations
+                    </summary>
+                    <div className="mt-2 rounded-lg bg-purple-50 p-3 text-xs text-gray-700 whitespace-pre-wrap">
+                      {pattern.abbreviations}
+                    </div>
+                  </details>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-sm text-gray-500">No pattern content available</p>
+                <Link
+                  href={`/patterns/${pattern.id}`}
+                  className="mt-2 inline-flex items-center text-sm text-purple-600 hover:text-purple-700"
+                >
+                  Edit pattern →
+                </Link>
+              </div>
+            )}
+
+            {/* Link to full pattern page */}
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
               <Link
                 href={`/patterns/${pattern.id}`}
-                className="mt-2 inline-flex items-center text-sm text-purple-600 hover:text-purple-700"
+                className="text-xs text-purple-600 hover:text-purple-700 font-medium min-h-[44px] flex items-center"
               >
-                Edit pattern →
+                View full pattern →
               </Link>
             </div>
-          )}
-
-          {/* Link to full pattern page */}
-          <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
-            <Link
-              href={`/patterns/${pattern.id}`}
-              className="text-xs text-purple-600 hover:text-purple-700 font-medium min-h-[44px] flex items-center"
-            >
-              View full pattern →
-            </Link>
           </div>
         </div>
       )}
@@ -602,10 +771,49 @@ function PatternViewer({
   )
 }
 
-// ─── Notes Panel (collapsible quick-access) ──────────────────────────────────
+// ─── Notes Panel (collapsible quick-access with inline creation) ─────────────
 
 function NotesPanel({ projectId, notes }: { projectId: string; notes: Note[] }) {
   const [expanded, setExpanded] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [noteContent, setNoteContent] = useState('')
+  const [noteCategory, setNoteCategory] = useState('general')
+  const [saving, setSaving] = useState(false)
+  const [localNotes, setLocalNotes] = useState(notes)
+
+  const handleAddNote = async () => {
+    if (!noteContent.trim()) return
+    setSaving(true)
+    try {
+      const { createNote } = await import('@/lib/actions/notes')
+      const formData = new FormData()
+      formData.set('content', noteContent.trim())
+      formData.set('category', noteCategory)
+      const result = await createNote(projectId, null, formData)
+      if (!result?.error) {
+        // Add to local list
+        setLocalNotes((prev) => [
+          {
+            id: crypto.randomUUID(),
+            project_id: projectId,
+            user_id: '',
+            content: noteContent.trim(),
+            category: noteCategory,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          ...prev,
+        ])
+        setNoteContent('')
+        setNoteCategory('general')
+        setShowAddForm(false)
+      }
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="rounded-2xl border-2 border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -620,9 +828,9 @@ function NotesPanel({ projectId, notes }: { projectId: string; notes: Note[] }) 
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
           <span className="text-sm font-semibold text-gray-800">Notes</span>
-          {notes.length > 0 && (
+          {localNotes.length > 0 && (
             <span className="text-[10px] rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-medium">
-              {notes.length}
+              {localNotes.length}
             </span>
           )}
         </div>
@@ -639,19 +847,62 @@ function NotesPanel({ projectId, notes }: { projectId: string; notes: Note[] }) 
 
       {expanded && (
         <div className="border-t border-gray-100 p-4">
-          {notes.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-gray-500 mb-2">No notes yet</p>
-              <Link
-                href={`/projects/${projectId}/notes`}
-                className="inline-flex items-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-amber-700 min-h-[44px]"
-              >
-                + Add Note
-              </Link>
+          {/* Inline add note form */}
+          {showAddForm ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+              <textarea
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="Write your note..."
+                rows={3}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                autoFocus
+              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={noteCategory}
+                  onChange={(e) => setNoteCategory(e.target.value)}
+                  className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="general">General</option>
+                  <option value="remember_next_time">Remember Next Time</option>
+                  <option value="pattern_alteration">Pattern Alteration</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddNote}
+                  disabled={saving || !noteContent.trim()}
+                  className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50 min-h-[32px]"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddForm(false); setNoteContent('') }}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 min-h-[32px]"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors min-h-[40px]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Quick Note
+            </button>
+          )}
+
+          {localNotes.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-2">No notes yet</p>
+          ) : (
             <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {notes.slice(0, 5).map((note) => (
+              {localNotes.slice(0, 5).map((note) => (
                 <div key={note.id} className="rounded-lg bg-gray-50 p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`text-[10px] rounded-full px-2 py-0.5 font-medium ${
@@ -670,9 +921,9 @@ function NotesPanel({ projectId, notes }: { projectId: string; notes: Note[] }) 
                   <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap">{note.content}</p>
                 </div>
               ))}
-              {notes.length > 5 && (
+              {localNotes.length > 5 && (
                 <p className="text-xs text-gray-500 text-center pt-1">
-                  +{notes.length - 5} more notes
+                  +{localNotes.length - 5} more notes
                 </p>
               )}
               <div className="pt-2 flex justify-end">

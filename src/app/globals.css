@@ -25,6 +25,19 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Ensure form inputs always have readable text */
+input,
+textarea,
+select {
+  color: #171717;
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+}
+
 /* Prevent horizontal overflow on small screens (320px+) */
 html,
 body {

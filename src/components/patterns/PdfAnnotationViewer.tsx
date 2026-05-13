@@ -151,19 +151,18 @@ export default function PdfAnnotationViewer({
       clientX = e.touches[0].clientX
       clientY = e.touches[0].clientY
     } else {
-      clientX = e.clientX
-      clientY = e.clientY
+      clientX = (e as React.MouseEvent).clientX
+      clientY = (e as React.MouseEvent).clientY
     }
-    const scaleX = overlay.width / rect.width
-    const scaleY = overlay.height / rect.height
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
-    }
+    // Map from display coordinates to canvas internal coordinates
+    const x = ((clientX - rect.left) / rect.width) * overlay.width
+    const y = ((clientY - rect.top) / rect.height) * overlay.height
+    return { x, y }
   }
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (tool === 'pan') return
+    if ('touches' in e) e.preventDefault()
     const point = getCanvasPoint(e)
     if (!point) return
     setIsDrawing(true)
@@ -177,6 +176,7 @@ export default function PdfAnnotationViewer({
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing || tool === 'pan') return
+    if ('touches' in e) e.preventDefault()
     const point = getCanvasPoint(e)
     if (!point) return
 
@@ -485,27 +485,27 @@ export default function PdfAnnotationViewer({
       {/* Canvas area */}
       <div
         ref={containerRef}
-        className="relative overflow-auto bg-gray-100 max-h-[600px]"
+        className="overflow-auto bg-gray-100 max-h-[600px] flex justify-center"
         style={{ touchAction: tool === 'pan' ? 'auto' : 'none' }}
       >
-        <canvas ref={canvasRef} className="block mx-auto" />
-        <canvas
-          ref={overlayRef}
-          className="absolute top-0 left-0 block mx-auto"
-          style={{
-            width: canvasRef.current?.style.width,
-            height: canvasRef.current?.style.height,
-            cursor: tool === 'pan' ? 'grab' : tool === 'eraser' ? 'crosshair' : 'crosshair',
-            pointerEvents: tool === 'pan' ? 'none' : 'auto',
-          }}
-          onMouseDown={handlePointerDown}
-          onMouseMove={handlePointerMove}
-          onMouseUp={handlePointerUp}
-          onMouseLeave={handlePointerUp}
-          onTouchStart={handlePointerDown}
-          onTouchMove={handlePointerMove}
-          onTouchEnd={handlePointerUp}
-        />
+        <div className="relative inline-block">
+          <canvas ref={canvasRef} className="block" />
+          <canvas
+            ref={overlayRef}
+            className="absolute top-0 left-0 w-full h-full"
+            style={{
+              cursor: tool === 'pan' ? 'grab' : 'crosshair',
+              pointerEvents: tool === 'pan' ? 'none' : 'auto',
+            }}
+            onMouseDown={handlePointerDown}
+            onMouseMove={handlePointerMove}
+            onMouseUp={handlePointerUp}
+            onMouseLeave={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchMove={handlePointerMove}
+            onTouchEnd={handlePointerUp}
+          />
+        </div>
       </div>
     </div>
   )

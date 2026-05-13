@@ -154,7 +154,7 @@ export default function PdfAnnotationViewer({
 
     const pageAnnotations = annotations[currentPage] ?? []
     for (const stroke of pageAnnotations) {
-      if (stroke.type === 'freehand' && stroke.points && stroke.points.length > 1) {
+      if ((stroke.type === 'freehand' || stroke.type === 'highlight') && stroke.points && stroke.points.length > 1) {
         ctx.beginPath()
         ctx.strokeStyle = stroke.color
         ctx.lineWidth = stroke.width
@@ -168,6 +168,7 @@ export default function PdfAnnotationViewer({
         ctx.stroke()
         ctx.globalAlpha = 1
       } else if (stroke.type === 'highlight' && stroke.rect) {
+        // Legacy rect-based highlights
         ctx.fillStyle = stroke.color
         ctx.globalAlpha = stroke.opacity
         ctx.fillRect(stroke.rect.x, stroke.rect.y, stroke.rect.w, stroke.rect.h)

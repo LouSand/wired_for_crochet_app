@@ -25,17 +25,32 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Ensure form inputs always have readable text */
+/* Ensure form inputs always have readable text — force dark text on all inputs */
 input,
 textarea,
-select {
-  color: #171717;
-  background-color: #ffffff;
+select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="url"],
+input[type="tel"] {
+  color: #171717 !important;
+  background-color: #ffffff !important;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #6b7280;
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Ensure select options are readable */
+select option {
+  color: #171717;
+  background-color: #ffffff;
 }
 
 /* Prevent horizontal overflow on small screens (320px+) */

@@ -410,8 +410,31 @@ function CountersCard({ projectId, counters }: { projectId: string; counters: Co
 function CounterRow({ counter }: { counter: Counter }) {
   const [value, setValue] = useState(counter.current_value)
   const [loading, setLoading] = useState(false)
+  const [showTargetReached, setShowTargetReached] = useState(false)
+  const [targetAcknowledged, setTargetAcknowledged] = useState(false)
 
   const handleIncrement = async () => {
+    // If at target and not yet acknowledged, show popup
+    if (counter.target_value && value >= counter.target_value && !targetAcknowledged) {
+      setShowTargetReached(true)
+      return
+    }
+    setLoading(true)
+    const { data } = await incrementCounter(counter.id)
+    if (data) {
+      setValue(data.current_value)
+      // Show popup when hitting target for the first time
+      if (counter.target_value && data.current_value >= counter.target_value && !targetAcknowledged) {
+        setShowTargetReached(true)
+      }
+    }
+    setLoading(false)
+  }
+
+  const handleContinuePastTarget = async () => {
+    setTargetAcknowledged(true)
+    setShowTargetReached(false)
+    // Do the increment that was blocked
     setLoading(true)
     const { data } = await incrementCounter(counter.id)
     if (data) setValue(data.current_value)
@@ -445,6 +468,32 @@ function CounterRow({ counter }: { counter: Counter }) {
             className="h-full rounded-full bg-purple-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
+        </div>
+      )}
+
+      {/* Target reached popup */}
+      {showTargetReached && (
+        <div className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-center space-y-2">
+          <p className="text-sm font-medium text-green-800">
+            🎉 Target reached! ({counter.target_value})
+          </p>
+          <p className="text-xs text-green-700">Continue counting past the target?</p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleContinuePastTarget}
+              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 min-h-[32px]"
+            >
+              Yes, keep going
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTargetReached(false)}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 min-h-[32px]"
+            >
+              Stop here
+            </button>
+          </div>
         </div>
       )}
 
@@ -1069,8 +1118,28 @@ function FocusMode({
 function FocusCounterRow({ counter }: { counter: Counter }) {
   const [value, setValue] = useState(counter.current_value)
   const [loading, setLoading] = useState(false)
+  const [showTargetReached, setShowTargetReached] = useState(false)
+  const [targetAcknowledged, setTargetAcknowledged] = useState(false)
 
   const handleIncrement = async () => {
+    if (counter.target_value && value >= counter.target_value && !targetAcknowledged) {
+      setShowTargetReached(true)
+      return
+    }
+    setLoading(true)
+    const { data } = await incrementCounter(counter.id)
+    if (data) {
+      setValue(data.current_value)
+      if (counter.target_value && data.current_value >= counter.target_value && !targetAcknowledged) {
+        setShowTargetReached(true)
+      }
+    }
+    setLoading(false)
+  }
+
+  const handleContinuePastTarget = async () => {
+    setTargetAcknowledged(true)
+    setShowTargetReached(false)
     setLoading(true)
     const { data } = await incrementCounter(counter.id)
     if (data) setValue(data.current_value)
@@ -1104,6 +1173,32 @@ function FocusCounterRow({ counter }: { counter: Counter }) {
             className="h-full rounded-full bg-purple-400 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
+        </div>
+      )}
+
+      {/* Target reached popup — dark mode */}
+      {showTargetReached && (
+        <div className="mb-3 rounded-lg border border-green-700 bg-green-900/50 p-3 text-center space-y-2">
+          <p className="text-sm font-medium text-green-300">
+            🎉 Target reached! ({counter.target_value})
+          </p>
+          <p className="text-xs text-green-400">Continue counting past the target?</p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleContinuePastTarget}
+              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 min-h-[32px]"
+            >
+              Yes, keep going
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTargetReached(false)}
+              className="rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-700 min-h-[32px]"
+            >
+              Stop here
+            </button>
+          </div>
         </div>
       )}
 

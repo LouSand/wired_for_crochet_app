@@ -68,6 +68,7 @@ export default function ProjectDashboard({
   const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -83,85 +84,97 @@ export default function ProjectDashboard({
   const statusColor = STATUS_COLORS[project.status] ?? 'bg-gray-100 text-gray-700'
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}>
+    <div className="space-y-4 pb-6">
+      {/* Compact Header — mobile optimised */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl truncate">{project.name}</h1>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor}`}>
               {formatLabel(project.status)}
             </span>
+          </div>
+          {/* Compact info row */}
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+            {project.estimated_completion_date && (
+              <span>Due {formatDate(project.estimated_completion_date)}</span>
+            )}
             {project.priority && (
-              <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                P{project.priority}
-              </span>
+              <span>{PRIORITY_LABELS[project.priority]} priority</span>
+            )}
+            {patternTitle && (
+              <Link href={`/patterns/${project.pattern_id}`} className="text-purple-600 hover:underline">
+                {patternTitle}
+              </Link>
             )}
           </div>
-          {project.description && (
-            <p className="mt-1 text-sm text-gray-600 line-clamp-2">{project.description}</p>
-          )}
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Link
-            href={`/business/invoicing/invoices/new?from_project=${project.id}`}
-            className="inline-flex items-center rounded-md border border-purple-300 bg-white px-3 py-1.5 text-xs font-medium text-purple-700 shadow-sm hover:bg-purple-50"
-          >
-            Invoice
-          </Link>
-          <Link
-            href={`/projects/${project.id}/edit`}
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Edit
-          </Link>
-          <button
-            type="button"
-            onClick={() => setShowDeleteDialog(true)}
-            className="inline-flex items-center rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
+        {/* Actions menu */}
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 active:bg-gray-100"
+          aria-label="Project options"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+          </svg>
+        </button>
       </div>
 
-      {/* Main grid: Timer + Counters side by side */}
+      {/* Expandable details/actions panel */}
+      {showDetails && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          {project.description && (
+            <p className="text-sm text-gray-600">{project.description}</p>
+          )}
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+            <span>Started: {formatDate(project.date_started)}</span>
+            {project.difficulty && <span>• {formatLabel(project.difficulty)}</span>}
+            {project.customer_name && <span>• {project.customer_name}</span>}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Link
+              href={`/projects/${project.id}/edit`}
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 min-h-[44px]"
+            >
+              Edit Project
+            </Link>
+            <Link
+              href={`/business/invoicing/invoices/new?from_project=${project.id}`}
+              className="inline-flex items-center rounded-lg border border-purple-300 bg-white px-4 py-2.5 text-sm font-medium text-purple-700 shadow-sm hover:bg-purple-50 active:bg-purple-100 min-h-[44px]"
+            >
+              Create Invoice
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowDeleteDialog(true)}
+              className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 active:bg-red-100 min-h-[44px]"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MAIN WORKSPACE: Timer + Counters ═══ */}
+      {/* On mobile: stacked vertically. On desktop: side by side */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Timer Card */}
+        {/* Timer — large, easy to tap */}
         <TimerCard projectId={project.id} activeSession={activeSession} totalDurationSeconds={totalDurationSeconds} />
 
-        {/* Counters Card */}
+        {/* Counters — tap-friendly with large buttons */}
         <CountersCard projectId={project.id} counters={counters} />
       </div>
 
-      {/* Info strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        <InfoChip label="Started" value={formatDate(project.date_started)} />
-        {project.estimated_completion_date && (
-          <InfoChip label="Due" value={formatDate(project.estimated_completion_date)} />
-        )}
-        {project.difficulty && (
-          <InfoChip label="Difficulty" value={formatLabel(project.difficulty)} />
-        )}
-        {project.customer_name && (
-          <InfoChip label="Customer" value={project.customer_name} />
-        )}
-        {project.priority && (
-          <InfoChip label="Priority" value={PRIORITY_LABELS[project.priority]} />
-        )}
-        {patternTitle && (
-          <InfoChip label="Pattern" value={patternTitle} href={`/patterns/${project.pattern_id}`} />
-        )}
-      </div>
-
-      {/* Quick links to detailed views */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <QuickLink href={`/projects/${project.id}/time`} label="Time History" icon="clock" />
+      {/* ═══ QUICK NAVIGATION ═══ */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        <QuickLink href={`/projects/${project.id}/time`} label="Time" icon="clock" />
+        <QuickLink href={`/projects/${project.id}/counters`} label="Counters" icon="counter" />
         <QuickLink href={`/projects/${project.id}/yarn`} label="Yarn" icon="yarn" />
         <QuickLink href={`/projects/${project.id}/photos`} label="Photos" icon="camera" />
         <QuickLink href={`/projects/${project.id}/notes`} label="Notes" icon="note" />
         <QuickLink href={`/projects/${project.id}/hooks`} label="Hooks" icon="hook" />
-        <QuickLink href={`/projects/${project.id}/counters`} label="All Counters" icon="counter" />
         <QuickLink href={`/projects/${project.id}/pricing`} label="Pricing" icon="pricing" />
       </div>
 
@@ -178,7 +191,7 @@ export default function ProjectDashboard({
   )
 }
 
-// ─── Timer Card ──────────────────────────────────────────────────────────────
+// ─── Timer Card (mobile-first, large touch targets) ──────────────────────────
 
 function TimerCard({
   projectId,
@@ -195,41 +208,54 @@ function TimerCard({
   })
 
   return (
-    <div className="rounded-xl border-2 border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-700">Timer</h2>
-        <Link href={`/projects/${projectId}/time`} className="text-xs text-purple-600 hover:text-purple-700">
+    <div className={`rounded-2xl border-2 p-6 shadow-sm transition-colors ${
+      isRunning ? 'border-green-300 bg-green-50/50' : 'border-gray-200 bg-white'
+    }`}>
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm font-medium text-gray-600">Timer</span>
+        </div>
+        <Link href={`/projects/${projectId}/time`} className="text-xs text-purple-600 hover:text-purple-700 min-h-[44px] min-w-[44px] flex items-center justify-center">
           History →
         </Link>
       </div>
 
-      {/* Elapsed display */}
-      <div className="text-center">
-        <p className="font-mono text-4xl font-bold tracking-wider text-gray-900" aria-live="polite">
+      {/* Large elapsed display */}
+      <div className="text-center py-2">
+        <p
+          className="font-mono text-5xl font-bold tracking-wider text-gray-900 sm:text-6xl tabular-nums"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {formatElapsed(elapsed)}
         </p>
         {isRunning && (
-          <div className="mt-2 flex items-center justify-center gap-1.5">
-            <span className="relative flex h-2 w-2">
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <span className="relative flex h-3 w-3">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
             </span>
-            <span className="text-xs font-medium text-green-700">Running</span>
+            <span className="text-sm font-medium text-green-700">Running</span>
           </div>
         )}
       </div>
 
-      {/* Start/Stop button */}
-      <div className="mt-4 flex justify-center">
+      {/* Large Start/Stop button — minimum 48px height for easy tapping */}
+      <div className="mt-5 flex justify-center">
         {isRunning ? (
           <button
             type="button"
             onClick={stop}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:opacity-50 transition-colors"
+            aria-label="Stop timer"
+            className="inline-flex items-center justify-center gap-3 rounded-full bg-red-600 px-10 py-4 text-base font-bold text-white shadow-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 active:scale-95 disabled:opacity-50 transition-all min-h-[52px] min-w-[160px]"
           >
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="6" y="6" width="12" height="12" rx="1" />
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
             </svg>
             {isLoading ? 'Stopping...' : 'Stop'}
           </button>
@@ -238,9 +264,10 @@ function TimerCard({
             type="button"
             onClick={start}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-200 disabled:opacity-50 transition-colors"
+            aria-label="Start timer"
+            className="inline-flex items-center justify-center gap-3 rounded-full bg-green-600 px-10 py-4 text-base font-bold text-white shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-200 active:scale-95 disabled:opacity-50 transition-all min-h-[52px] min-w-[160px]"
           >
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 5.14v14l11-7-11-7z" />
             </svg>
             {isLoading ? 'Starting...' : 'Start'}
@@ -249,37 +276,42 @@ function TimerCard({
       </div>
 
       {/* Total time */}
-      <p className="mt-3 text-center text-xs text-gray-500">
-        Total: {formatTotalTime(totalDurationSeconds)}
+      <p className="mt-4 text-center text-sm text-gray-500">
+        Total tracked: <span className="font-semibold text-gray-700">{formatTotalTime(totalDurationSeconds)}</span>
       </p>
     </div>
   )
 }
 
-// ─── Counters Card ───────────────────────────────────────────────────────────
+// ─── Counters Card (large tap targets for crocheting) ────────────────────────
 
 function CountersCard({ projectId, counters }: { projectId: string; counters: Counter[] }) {
   return (
-    <div className="rounded-xl border-2 border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-700">Counters</h2>
-        <Link href={`/projects/${projectId}/counters`} className="text-xs text-purple-600 hover:text-purple-700">
+    <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z" />
+          </svg>
+          <span className="text-sm font-medium text-gray-600">Counters</span>
+        </div>
+        <Link href={`/projects/${projectId}/counters`} className="text-xs text-purple-600 hover:text-purple-700 min-h-[44px] min-w-[44px] flex items-center justify-center">
           Manage →
         </Link>
       </div>
 
       {counters.length === 0 ? (
-        <div className="text-center py-6">
-          <p className="text-sm text-gray-500">No counters yet.</p>
+        <div className="text-center py-8">
+          <p className="text-sm text-gray-500 mb-3">No counters yet</p>
           <Link
             href={`/projects/${projectId}/counters`}
-            className="mt-2 inline-flex text-xs text-purple-600 hover:text-purple-700"
+            className="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-purple-700 active:bg-purple-800 min-h-[44px]"
           >
-            + Add counter
+            + Add Counter
           </Link>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[240px] overflow-y-auto">
+        <div className="space-y-3">
           {counters.map((counter) => (
             <CounterRow key={counter.id} counter={counter} />
           ))}
@@ -311,42 +343,46 @@ function CounterRow({ counter }: { counter: Counter }) {
   const progress = counter.target_value ? Math.min(100, (value / counter.target_value) * 100) : null
 
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2">
-      {/* Counter name + progress */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{counter.name}</p>
+    <div className="rounded-xl bg-gray-50 p-3">
+      {/* Counter name */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-gray-800 truncate">{counter.name}</p>
         {counter.target_value && (
-          <div className="mt-1 flex items-center gap-2">
-            <div className="flex-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-purple-500 transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-gray-500 shrink-0">
-              {value}/{counter.target_value}
-            </span>
-          </div>
+          <span className="text-xs text-gray-500 shrink-0 ml-2">
+            {value}/{counter.target_value}
+          </span>
         )}
       </div>
 
-      {/* Value + buttons */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Progress bar */}
+      {counter.target_value && (
+        <div className="mb-3 h-2 rounded-full bg-gray-200 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-purple-500 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
+      {/* Large counter controls — designed for tapping while crocheting */}
+      <div className="flex items-center justify-center gap-4">
         <button
           type="button"
           onClick={handleDecrement}
           disabled={loading || value <= 0}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-colors"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 bg-white text-xl font-bold text-gray-600 shadow-sm hover:bg-gray-100 active:bg-gray-200 active:scale-95 disabled:opacity-30 transition-all min-h-[48px] min-w-[48px]"
           aria-label={`Decrease ${counter.name}`}
         >
           −
         </button>
-        <span className="w-8 text-center text-sm font-bold text-gray-900">{value}</span>
+        <span className="min-w-[3rem] text-center text-2xl font-bold text-gray-900 tabular-nums">
+          {value}
+        </span>
         <button
           type="button"
           onClick={handleIncrement}
           disabled={loading}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-30 transition-colors"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-purple-400 bg-purple-50 text-xl font-bold text-purple-700 shadow-sm hover:bg-purple-100 active:bg-purple-200 active:scale-95 disabled:opacity-30 transition-all min-h-[48px] min-w-[48px]"
           aria-label={`Increase ${counter.name}`}
         >
           +
@@ -356,23 +392,7 @@ function CounterRow({ counter }: { counter: Counter }) {
   )
 }
 
-// ─── Info Chip ───────────────────────────────────────────────────────────────
-
-function InfoChip({ label, value, href }: { label: string; value: string; href?: string }) {
-  const content = (
-    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-gray-900 truncate">{value}</p>
-    </div>
-  )
-
-  if (href) {
-    return <Link href={href} className="hover:ring-2 hover:ring-purple-200 rounded-lg transition-shadow">{content}</Link>
-  }
-  return content
-}
-
-// ─── Quick Link ──────────────────────────────────────────────────────────────
+// ─── Quick Link (touch-friendly navigation) ──────────────────────────────────
 
 function QuickLink({ href, label, icon }: { href: string; label: string; icon: string }) {
   const icons: Record<string, JSX.Element> = {
@@ -388,12 +408,12 @@ function QuickLink({ href, label, icon }: { href: string; label: string; icon: s
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm hover:border-purple-300 hover:shadow-md transition-all"
+      className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:border-purple-300 hover:shadow-md active:bg-gray-50 active:scale-95 transition-all min-h-[64px] justify-center"
     >
-      <svg className="h-4 w-4 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+      <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
         {icons[icon]}
       </svg>
-      <span className="text-xs font-medium text-gray-700">{label}</span>
+      <span className="text-[11px] font-medium text-gray-700 text-center leading-tight">{label}</span>
     </Link>
   )
 }

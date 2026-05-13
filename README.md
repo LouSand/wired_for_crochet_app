@@ -98,18 +98,18 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Make the app usable while actively crocheting on any device.
 
 **Features:**
-- [ ] Improve project dashboard layout for phone-in-hand use
-- [ ] Show pattern/PDF/photo near counters at bottom of project page
-- [ ] Add tile photo/icon on project cards for visual scanning
-- [ ] Audit and fix responsive breakpoints across all pages
-- [ ] Ensure touch targets are 44px+ for mobile use
-- [ ] Improve sidebar navigation for mobile (bottom nav option)
+- [x] Improve project dashboard layout for phone-in-hand use
+- [x] Show pattern/PDF/photo near counters at bottom of project page
+- [x] Add tile photo/icon on project cards for visual scanning
+- [x] Audit and fix responsive breakpoints across all pages
+- [x] Ensure touch targets are 44px+ for mobile use
+- [x] Improve sidebar navigation for mobile (bottom nav option)
 - [ ] Dark mode consideration for long crafting sessions
 
-**Status:** Not started  
+**Status:** Done  
 **Files affected:** `ProjectDashboard.tsx`, `ProjectCard.tsx`, `sidebar.tsx`, all page layouts  
 **Dependencies:** None  
-**Notes:** This is the highest priority — the app needs to be comfortable to use while crocheting with yarn in your hands.
+**Notes:** Mobile-first redesign complete with bottom nav, large touch targets, and visual project cards.
 
 ---
 
@@ -117,17 +117,17 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Make the project page a true "workspace" for active crocheting.
 
 **Features:**
-- [ ] Integrate timer controls directly beside/below counters
-- [ ] Show linked pattern (PDF viewer or image) in the workspace
-- [ ] Quick-access notes panel (collapsible)
-- [ ] Project progress bar (auto from counters or manual)
-- [ ] "Active crocheting mode" — minimal UI, large buttons, counters + timer only
+- [x] Integrate timer controls directly beside/below counters
+- [x] Show linked pattern (PDF viewer or image) in the workspace
+- [x] Quick-access notes panel (collapsible)
+- [x] Project progress bar (auto from counters or manual)
+- [x] "Active crocheting mode" — minimal UI, large buttons, counters + timer only
 - [ ] Swipe gestures for counter increment on mobile
 
-**Status:** Not started  
-**Files affected:** `ProjectDashboard.tsx`, new components  
+**Status:** Done (swipe gestures deferred — requires touch event handling library)  
+**Files affected:** `ProjectDashboard.tsx`, `page.tsx`  
 **Dependencies:** Phase 1  
-**Notes:** The workspace should feel like having your pattern, counter, and timer all on the table next to you.
+**Notes:** The workspace now shows pattern viewer, progress bar, collapsible notes, and a full-screen focus mode for active crocheting.
 
 ---
 

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { Project, TimeSession, Counter } from '@/types/database'
+import type { Project, TimeSession, Counter, Pattern, Note } from '@/types/database'
 import { useTimer } from '@/hooks/useTimer'
 import { incrementCounter, decrementCounter } from '@/lib/actions/counters'
 import { deleteProject } from '@/lib/actions/projects'
@@ -52,23 +52,28 @@ const PRIORITY_LABELS = ['', 'Highest', 'High', 'Medium', 'Low', 'Lowest']
 
 interface ProjectDashboardProps {
   project: Project
-  patternTitle: string | null
+  pattern: Pattern | null
+  patternFileUrl: string | null
   activeSession: TimeSession | null
   totalDurationSeconds: number
   counters: Counter[]
+  notes: Note[]
 }
 
 export default function ProjectDashboard({
   project,
-  patternTitle,
+  pattern,
+  patternFileUrl,
   activeSession,
   totalDurationSeconds,
   counters,
+  notes,
 }: ProjectDashboardProps) {
   const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -82,6 +87,32 @@ export default function ProjectDashboard({
   }
 
   const statusColor = STATUS_COLORS[project.status] ?? 'bg-gray-100 text-gray-700'
+
+  // Calculate overall project progress from counters
+  const countersWithTargets = counters.filter((c) => c.target_value && c.target_value > 0)
+  const overallProgress = countersWithTargets.length > 0
+    ? Math.round(
+        countersWithTargets.reduce((sum, c) => {
+          const pct = Math.min(100, (c.current_value / (c.target_value ?? 1)) * 100)
+          return sum + pct
+        }, 0) / countersWithTargets.length
+      )
+    : null
+
+  // ─── FOCUS MODE (Active Crocheting Mode) ─────────────────────────────────
+  if (focusMode) {
+    return (
+      <FocusMode
+        project={project}
+        activeSession={activeSession}
+        totalDurationSeconds={totalDurationSeconds}
+        counters={counters}
+        pattern={pattern}
+        patternFileUrl={patternFileUrl}
+        onExit={() => setFocusMode(false)}
+      />
+    )
+  }
 
   return (
     <div className="space-y-4 pb-6">
@@ -102,25 +133,43 @@ export default function ProjectDashboard({
             {project.priority && (
               <span>{PRIORITY_LABELS[project.priority]} priority</span>
             )}
-            {patternTitle && (
+            {pattern && (
               <Link href={`/patterns/${project.pattern_id}`} className="text-purple-600 hover:underline">
-                {patternTitle}
+                {pattern.title}
               </Link>
             )}
           </div>
         </div>
-        {/* Actions menu */}
-        <button
-          type="button"
-          onClick={() => setShowDetails(!showDetails)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 active:bg-gray-100"
-          aria-label="Project options"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-          </svg>
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFocusMode(true)}
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-purple-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-purple-700 active:bg-purple-800 transition-colors"
+            aria-label="Enter focus mode"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+            <span className="hidden sm:inline">Focus</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 active:bg-gray-100"
+            aria-label="Project options"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* Overall Progress Bar */}
+      {overallProgress !== null && (
+        <ProgressBar progress={overallProgress} />
+      )}
 
       {/* Expandable details/actions panel */}
       {showDetails && (
@@ -158,14 +207,18 @@ export default function ProjectDashboard({
       )}
 
       {/* ═══ MAIN WORKSPACE: Timer + Counters ═══ */}
-      {/* On mobile: stacked vertically. On desktop: side by side */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Timer — large, easy to tap */}
         <TimerCard projectId={project.id} activeSession={activeSession} totalDurationSeconds={totalDurationSeconds} />
-
-        {/* Counters — tap-friendly with large buttons */}
         <CountersCard projectId={project.id} counters={counters} />
       </div>
+
+      {/* ═══ PATTERN VIEWER ═══ */}
+      {pattern && (
+        <PatternViewer pattern={pattern} patternFileUrl={patternFileUrl} />
+      )}
+
+      {/* ═══ QUICK NOTES PANEL ═══ */}
+      <NotesPanel projectId={project.id} notes={notes} />
 
       {/* ═══ QUICK NAVIGATION ═══ */}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -191,6 +244,42 @@ export default function ProjectDashboard({
   )
 }
 
+
+// ─── Progress Bar ────────────────────────────────────────────────────────────
+
+function ProgressBar({ progress }: { progress: number }) {
+  const getColor = () => {
+    if (progress >= 100) return 'bg-green-500'
+    if (progress >= 75) return 'bg-emerald-500'
+    if (progress >= 50) return 'bg-purple-500'
+    if (progress >= 25) return 'bg-blue-500'
+    return 'bg-gray-400'
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-gray-600">Overall Progress</span>
+        <span className="text-xs font-bold text-gray-800">{progress}%</span>
+      </div>
+      <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ease-out ${getColor()}`}
+          style={{ width: `${progress}%` }}
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Project progress: ${progress}%`}
+        />
+      </div>
+      {progress >= 100 && (
+        <p className="mt-1.5 text-xs text-green-700 font-medium text-center">🎉 All counters complete!</p>
+      )}
+    </div>
+  )
+}
+
 // ─── Timer Card (mobile-first, large touch targets) ──────────────────────────
 
 function TimerCard({
@@ -211,7 +300,6 @@ function TimerCard({
     <div className={`rounded-2xl border-2 p-6 shadow-sm transition-colors ${
       isRunning ? 'border-green-300 bg-green-50/50' : 'border-gray-200 bg-white'
     }`}>
-      {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -224,7 +312,6 @@ function TimerCard({
         </Link>
       </div>
 
-      {/* Large elapsed display */}
       <div className="text-center py-2">
         <p
           className="font-mono text-5xl font-bold tracking-wider text-gray-900 sm:text-6xl tabular-nums"
@@ -244,7 +331,6 @@ function TimerCard({
         )}
       </div>
 
-      {/* Large Start/Stop button — minimum 48px height for easy tapping */}
       <div className="mt-5 flex justify-center">
         {isRunning ? (
           <button
@@ -275,7 +361,6 @@ function TimerCard({
         )}
       </div>
 
-      {/* Total time */}
       <p className="mt-4 text-center text-sm text-gray-500">
         Total tracked: <span className="font-semibold text-gray-700">{formatTotalTime(totalDurationSeconds)}</span>
       </p>
@@ -344,7 +429,6 @@ function CounterRow({ counter }: { counter: Counter }) {
 
   return (
     <div className="rounded-xl bg-gray-50 p-3">
-      {/* Counter name */}
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-semibold text-gray-800 truncate">{counter.name}</p>
         {counter.target_value && (
@@ -354,7 +438,6 @@ function CounterRow({ counter }: { counter: Counter }) {
         )}
       </div>
 
-      {/* Progress bar */}
       {counter.target_value && (
         <div className="mb-3 h-2 rounded-full bg-gray-200 overflow-hidden">
           <div
@@ -364,7 +447,6 @@ function CounterRow({ counter }: { counter: Counter }) {
         </div>
       )}
 
-      {/* Large counter controls — designed for tapping while crocheting */}
       <div className="flex items-center justify-center gap-4">
         <button
           type="button"
@@ -392,10 +474,448 @@ function CounterRow({ counter }: { counter: Counter }) {
   )
 }
 
+// ─── Pattern Viewer ──────────────────────────────────────────────────────────
+
+function PatternViewer({
+  pattern,
+  patternFileUrl,
+}: {
+  pattern: Pattern
+  patternFileUrl: string | null
+}) {
+  const [expanded, setExpanded] = useState(true)
+
+  const isUploaded = pattern.type === 'uploaded'
+  const isPdf = pattern.file_name?.toLowerCase().endsWith('.pdf')
+  const isImage = pattern.file_name?.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+
+  return (
+    <div className="rounded-2xl border-2 border-gray-200 bg-white shadow-sm overflow-hidden">
+      {/* Header */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between p-4 hover:bg-gray-50 transition-colors min-h-[48px]"
+        aria-expanded={expanded}
+      >
+        <div className="flex items-center gap-2">
+          <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+          </svg>
+          <span className="text-sm font-semibold text-gray-800">{pattern.title}</span>
+          <span className="text-[10px] rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 font-medium">
+            {isUploaded ? 'Uploaded' : 'Written'}
+          </span>
+        </div>
+        <svg
+          className={`h-5 w-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {/* Content */}
+      {expanded && (
+        <div className="border-t border-gray-100 p-4">
+          {isUploaded && patternFileUrl ? (
+            <div>
+              {isPdf && (
+                <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <iframe
+                    src={patternFileUrl}
+                    className="w-full h-[400px] sm:h-[500px] lg:h-[600px]"
+                    title={`Pattern: ${pattern.title}`}
+                  />
+                </div>
+              )}
+              {isImage && (
+                <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={patternFileUrl}
+                    alt={`Pattern: ${pattern.title}`}
+                    className="max-w-full max-h-[600px] object-contain"
+                  />
+                </div>
+              )}
+              {!isPdf && !isImage && (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-500 mb-2">File: {pattern.file_name}</p>
+                  <a
+                    href={patternFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[44px]"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Download File
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : pattern.instructions ? (
+            <div className="prose prose-sm max-w-none">
+              <div className="max-h-[400px] overflow-y-auto rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">
+                {pattern.instructions}
+              </div>
+              {pattern.abbreviations && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs font-medium text-purple-600 hover:text-purple-700">
+                    Abbreviations
+                  </summary>
+                  <div className="mt-2 rounded-lg bg-purple-50 p-3 text-xs text-gray-700 whitespace-pre-wrap">
+                    {pattern.abbreviations}
+                  </div>
+                </details>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-500">No pattern content available</p>
+              <Link
+                href={`/patterns/${pattern.id}`}
+                className="mt-2 inline-flex items-center text-sm text-purple-600 hover:text-purple-700"
+              >
+                Edit pattern →
+              </Link>
+            </div>
+          )}
+
+          {/* Link to full pattern page */}
+          <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+            <Link
+              href={`/patterns/${pattern.id}`}
+              className="text-xs text-purple-600 hover:text-purple-700 font-medium min-h-[44px] flex items-center"
+            >
+              View full pattern →
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Notes Panel (collapsible quick-access) ──────────────────────────────────
+
+function NotesPanel({ projectId, notes }: { projectId: string; notes: Note[] }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="rounded-2xl border-2 border-gray-200 bg-white shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between p-4 hover:bg-gray-50 transition-colors min-h-[48px]"
+        aria-expanded={expanded}
+      >
+        <div className="flex items-center gap-2">
+          <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span className="text-sm font-semibold text-gray-800">Notes</span>
+          {notes.length > 0 && (
+            <span className="text-[10px] rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 font-medium">
+              {notes.length}
+            </span>
+          )}
+        </div>
+        <svg
+          className={`h-5 w-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gray-100 p-4">
+          {notes.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500 mb-2">No notes yet</p>
+              <Link
+                href={`/projects/${projectId}/notes`}
+                className="inline-flex items-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-amber-700 min-h-[44px]"
+              >
+                + Add Note
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {notes.slice(0, 5).map((note) => (
+                <div key={note.id} className="rounded-lg bg-gray-50 p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-[10px] rounded-full px-2 py-0.5 font-medium ${
+                      note.category === 'remember_next_time'
+                        ? 'bg-orange-100 text-orange-700'
+                        : note.category === 'pattern_alteration'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {formatLabel(note.category)}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {formatDate(note.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap">{note.content}</p>
+                </div>
+              ))}
+              {notes.length > 5 && (
+                <p className="text-xs text-gray-500 text-center pt-1">
+                  +{notes.length - 5} more notes
+                </p>
+              )}
+              <div className="pt-2 flex justify-end">
+                <Link
+                  href={`/projects/${projectId}/notes`}
+                  className="text-xs text-amber-600 hover:text-amber-700 font-medium min-h-[44px] flex items-center"
+                >
+                  View all notes →
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Focus Mode (Active Crocheting Mode) ─────────────────────────────────────
+// Minimal UI: just timer, counters, and optionally pattern. Large buttons, no distractions.
+
+function FocusMode({
+  project,
+  activeSession,
+  totalDurationSeconds,
+  counters,
+  pattern,
+  patternFileUrl,
+  onExit,
+}: {
+  project: Project
+  activeSession: TimeSession | null
+  totalDurationSeconds: number
+  counters: Counter[]
+  pattern: Pattern | null
+  patternFileUrl: string | null
+  onExit: () => void
+}) {
+  const { isRunning, elapsed, isLoading, start, stop } = useTimer({
+    projectId: project.id,
+    activeSession,
+  })
+  const [showPattern, setShowPattern] = useState(false)
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-950 text-white overflow-y-auto">
+      {/* Top bar — minimal */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+        <h2 className="text-sm font-semibold text-gray-200 truncate max-w-[60%]">{project.name}</h2>
+        <div className="flex items-center gap-2">
+          {pattern && (
+            <button
+              type="button"
+              onClick={() => setShowPattern(!showPattern)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 active:bg-gray-600 transition-colors"
+              aria-label={showPattern ? 'Hide pattern' : 'Show pattern'}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onExit}
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-gray-800 px-3 text-sm font-medium text-gray-300 hover:bg-gray-700 active:bg-gray-600 transition-colors"
+            aria-label="Exit focus mode"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+            </svg>
+            <span className="hidden sm:inline">Exit</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Pattern viewer in focus mode */}
+      {showPattern && pattern && (
+        <div className="px-4 py-3 border-b border-gray-800">
+          {pattern.type === 'uploaded' && patternFileUrl ? (
+            <div className="rounded-lg overflow-hidden border border-gray-700 bg-gray-900">
+              {pattern.file_name?.toLowerCase().endsWith('.pdf') ? (
+                <iframe
+                  src={patternFileUrl}
+                  className="w-full h-[250px] sm:h-[300px]"
+                  title={`Pattern: ${pattern.title}`}
+                />
+              ) : pattern.file_name?.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={patternFileUrl}
+                  alt={`Pattern: ${pattern.title}`}
+                  className="max-w-full max-h-[300px] object-contain mx-auto"
+                />
+              ) : null}
+            </div>
+          ) : pattern.instructions ? (
+            <div className="max-h-[250px] overflow-y-auto rounded-lg bg-gray-900 p-4 text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed border border-gray-700">
+              {pattern.instructions}
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Main content — timer + counters */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-8">
+        {/* Timer — extra large in focus mode */}
+        <div className="text-center w-full max-w-md">
+          <p
+            className="font-mono text-6xl font-bold tracking-wider text-white sm:text-7xl tabular-nums"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {formatElapsed(elapsed)}
+          </p>
+          {isRunning && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+              </span>
+              <span className="text-sm font-medium text-green-400">Running</span>
+            </div>
+          )}
+          <div className="mt-6 flex justify-center">
+            {isRunning ? (
+              <button
+                type="button"
+                onClick={stop}
+                disabled={isLoading}
+                aria-label="Stop timer"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-red-600 px-12 py-5 text-lg font-bold text-white shadow-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-400/50 active:scale-95 disabled:opacity-50 transition-all min-h-[60px] min-w-[180px]"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+                {isLoading ? 'Stopping...' : 'Stop'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={start}
+                disabled={isLoading}
+                aria-label="Start timer"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-green-600 px-12 py-5 text-lg font-bold text-white shadow-xl hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-400/50 active:scale-95 disabled:opacity-50 transition-all min-h-[60px] min-w-[180px]"
+              >
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 5.14v14l11-7-11-7z" />
+                </svg>
+                {isLoading ? 'Starting...' : 'Start'}
+              </button>
+            )}
+          </div>
+          <p className="mt-3 text-sm text-gray-400">
+            Total: <span className="font-semibold text-gray-200">{formatTotalTime(totalDurationSeconds)}</span>
+          </p>
+        </div>
+
+        {/* Counters — large, swipe-friendly */}
+        {counters.length > 0 && (
+          <div className="w-full max-w-md space-y-4">
+            {counters.map((counter) => (
+              <FocusCounterRow key={counter.id} counter={counter} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function FocusCounterRow({ counter }: { counter: Counter }) {
+  const [value, setValue] = useState(counter.current_value)
+  const [loading, setLoading] = useState(false)
+
+  const handleIncrement = async () => {
+    setLoading(true)
+    const { data } = await incrementCounter(counter.id)
+    if (data) setValue(data.current_value)
+    setLoading(false)
+  }
+
+  const handleDecrement = async () => {
+    if (value <= 0) return
+    setLoading(true)
+    const { data } = await decrementCounter(counter.id)
+    if (data) setValue(data.current_value)
+    setLoading(false)
+  }
+
+  const progress = counter.target_value ? Math.min(100, (value / counter.target_value) * 100) : null
+
+  return (
+    <div className="rounded-2xl bg-gray-800/80 p-4 border border-gray-700">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-gray-200 truncate">{counter.name}</p>
+        {counter.target_value && (
+          <span className="text-xs text-gray-400 shrink-0 ml-2">
+            {value}/{counter.target_value}
+          </span>
+        )}
+      </div>
+
+      {counter.target_value && (
+        <div className="mb-3 h-2 rounded-full bg-gray-700 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-purple-400 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-6">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={loading || value <= 0}
+          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-gray-600 bg-gray-800 text-2xl font-bold text-gray-300 shadow-lg hover:bg-gray-700 active:bg-gray-600 active:scale-95 disabled:opacity-30 transition-all min-h-[56px] min-w-[56px]"
+          aria-label={`Decrease ${counter.name}`}
+        >
+          −
+        </button>
+        <span className="min-w-[4rem] text-center text-3xl font-bold text-white tabular-nums">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={loading}
+          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-purple-500 bg-purple-900/50 text-2xl font-bold text-purple-300 shadow-lg hover:bg-purple-800/50 active:bg-purple-700/50 active:scale-95 disabled:opacity-30 transition-all min-h-[56px] min-w-[56px]"
+          aria-label={`Increase ${counter.name}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Quick Link (touch-friendly navigation) ──────────────────────────────────
 
 function QuickLink({ href, label, icon }: { href: string; label: string; icon: string }) {
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, React.ReactNode> = {
     clock: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
     yarn: <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />,
     camera: <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />,

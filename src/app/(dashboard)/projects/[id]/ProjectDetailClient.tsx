@@ -7,6 +7,7 @@ import type { Project } from '@/types/database'
 import { updateProject, deleteProject, type ProjectActionState } from '@/lib/actions/projects'
 import { PROJECT_STATUSES, PROJECT_DIFFICULTIES } from '@/lib/validators/project'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import CustomerSelector from '@/components/projects/CustomerSelector'
 
 function formatLabel(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -250,23 +251,12 @@ export default function ProjectDetailClient({ project, patternTitle }: ProjectDe
               </div>
 
               {/* Customer Name */}
-              <div>
-                <label htmlFor="edit-customer_name" className="block text-sm font-medium text-gray-700">
-                  Customer Name
-                </label>
-                <input
-                  type="text"
-                  id="edit-customer_name"
-                  name="customer_name"
-                  defaultValue={project.customer_name ?? ''}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                />
+              <CustomerSelector name="customer_name" defaultValue={project.customer_name ?? ''} />
                 {editState?.fieldErrors?.customer_name && (
                   <p className="mt-1 text-sm text-red-600" role="alert">
                     {editState.fieldErrors.customer_name[0]}
                   </p>
                 )}
-              </div>
 
               {/* Date Started */}
               <div>

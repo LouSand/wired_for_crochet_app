@@ -10,6 +10,7 @@ import PatternSelector from '@/components/projects/PatternSelector'
 import InlinePatternForm from '@/components/projects/InlinePatternForm'
 import MarkAsFinishedToggle from '@/components/projects/MarkAsFinishedToggle'
 import HookRecommendations from '@/components/hooks/HookRecommendations'
+import CustomerSelector from '@/components/projects/CustomerSelector'
 import type { Pattern } from '@/types/database'
 
 function formatLabel(value: string): string {
@@ -176,22 +177,12 @@ export default function NewProjectPage() {
         </div>
 
         {/* Customer Name */}
-        <div>
-          <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700">
-            Customer Name
-          </label>
-          <input
-            type="text"
-            id="customer_name"
-            name="customer_name"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-          />
-          {state?.fieldErrors?.customer_name && (
-            <p className="mt-1 text-sm text-red-600" role="alert">
-              {state.fieldErrors.customer_name[0]}
-            </p>
-          )}
-        </div>
+        <CustomerSelector name="customer_name" />
+        {state?.fieldErrors?.customer_name && (
+          <p className="mt-1 text-sm text-red-600" role="alert">
+            {state.fieldErrors.customer_name[0]}
+          </p>
+        )}
 
         {/* Date Started */}
         <div>

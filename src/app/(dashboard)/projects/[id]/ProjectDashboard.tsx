@@ -560,63 +560,6 @@ function PatternViewer({
       {/* Content */}
       {expanded && (
         <div className="border-t border-gray-100">
-          {/* Toolbar — only for written instructions (PDF/image has its own toolbar in PdfAnnotationViewer) */}
-          {hasInstructions && !(hasFile && (isPdf || isImage)) && (
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50 flex-wrap">
-            {/* Text zoom for instructions */}
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] text-gray-500 mr-1">Text:</span>
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                aria-label="Decrease text size"
-              >
-                A−
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                aria-label="Increase text size"
-              >
-                A+
-              </button>
-              <div className="h-5 w-px bg-gray-300 ml-1" />
-            </div>
-
-            {/* Highlight color picker */}
-            <div className="flex items-center gap-1">
-              {highlightColors.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setAnnotationColor(c.value)}
-                  className={`h-6 w-6 rounded-full border-2 transition-all min-h-[24px] min-w-[24px] ${
-                    annotationColor === c.value ? 'border-gray-800 scale-110' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: c.value }}
-                  aria-label={`Highlight color: ${c.label}`}
-                  title={c.label}
-                />
-              ))}
-            </div>
-
-            {highlights.length > 0 && (
-              <>
-                <div className="h-5 w-px bg-gray-300" />
-                <button
-                  type="button"
-                  onClick={() => setHighlights([])}
-                  className="text-xs text-red-600 hover:text-red-700 font-medium min-h-[32px] px-2"
-                >
-                  Clear all
-                </button>
-              </>
-            )}
-          </div>
-          )}
-
           {/* Pattern content */}
           <div className="p-4 space-y-4">
             {/* Uploaded file viewer (PDF or image) — with annotation support */}
@@ -651,6 +594,34 @@ function PatternViewer({
                     Instructions / Notes
                   </h3>
                 )}
+                {/* Instructions toolbar */}
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-gray-500 mr-1">Text:</span>
+                    <button type="button" onClick={() => setZoom((z) => Math.max(50, z - 25))} className="flex h-7 w-7 items-center justify-center rounded border border-gray-300 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100">A−</button>
+                    <button type="button" onClick={() => setZoom((z) => Math.min(200, z + 25))} className="flex h-7 w-7 items-center justify-center rounded border border-gray-300 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100">A+</button>
+                  </div>
+                  <div className="h-4 w-px bg-gray-300" />
+                  <div className="flex items-center gap-1">
+                    {highlightColors.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setAnnotationColor(c.value)}
+                        className={`h-5 w-5 rounded-full border-2 transition-all ${annotationColor === c.value ? 'border-gray-800 scale-110' : 'border-gray-300'}`}
+                        style={{ backgroundColor: c.value }}
+                        aria-label={`Highlight color: ${c.label}`}
+                        title={c.label}
+                      />
+                    ))}
+                  </div>
+                  {highlights.length > 0 && (
+                    <>
+                      <div className="h-4 w-px bg-gray-300" />
+                      <button type="button" onClick={() => setHighlights([])} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Clear all</button>
+                    </>
+                  )}
+                </div>
                 <div
                   className="max-h-[400px] overflow-y-auto rounded-lg bg-gray-50 border border-gray-200 font-mono leading-relaxed transition-all duration-200"
                   style={{ fontSize: `${Math.round(14 * (zoom / 100))}px` }}

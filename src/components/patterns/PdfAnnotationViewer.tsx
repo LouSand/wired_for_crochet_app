@@ -12,7 +12,7 @@ interface PdfAnnotationViewerProps {
   fileType?: 'pdf' | 'image'
 }
 
-type Tool = 'pan' | 'freehand' | 'highlight' | 'eraser'
+type Tool = 'pan' | 'freehand' | 'highlight' | 'eraser' | 'text'
 
 export default function PdfAnnotationViewer({
   pdfUrl,
@@ -38,6 +38,8 @@ export default function PdfAnnotationViewer({
   const [dirty, setDirty] = useState(false)
   const [pdfDoc, setPdfDoc] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
+  const [textInput, setTextInput] = useState('')
+  const [textPosition, setTextPosition] = useState<{ x: number; y: number } | null>(null)
 
   // Load PDF.js and the document, or load image
   useEffect(() => {
@@ -173,6 +175,12 @@ export default function PdfAnnotationViewer({
         ctx.globalAlpha = stroke.opacity
         ctx.fillRect(stroke.rect.x, stroke.rect.y, stroke.rect.w, stroke.rect.h)
         ctx.globalAlpha = 1
+      } else if (stroke.type === 'text' && stroke.points && stroke.points.length > 0 && stroke.text) {
+        ctx.font = `bold ${stroke.fontSize ?? 16}px sans-serif`
+        ctx.fillStyle = stroke.color
+        ctx.globalAlpha = stroke.opacity
+        ctx.fillText(stroke.text, stroke.points[0].x, stroke.points[0].y)
+        ctx.globalAlpha = 1
       }
     }
   }, [annotations, currentPage])
@@ -206,11 +214,16 @@ export default function PdfAnnotationViewer({
     if ('touches' in e) e.preventDefault()
     const point = getCanvasPoint(e)
     if (!point) return
+
+    if (tool === 'text') {
+      setTextPosition(point)
+      return
+    }
+
     setIsDrawing(true)
     setCurrentStroke([point])
 
     if (tool === 'eraser') {
-      // Find and remove stroke near this point
       eraseAt(point)
     }
   }
@@ -295,6 +308,28 @@ export default function PdfAnnotationViewer({
       setDirty(true)
       redrawAnnotations()
     }
+  }
+
+  // Place text annotation
+  const handlePlaceText = () => {
+    if (!textPosition || !textInput.trim()) return
+    const newStroke: AnnotationStroke = {
+      id: crypto.randomUUID(),
+      type: 'text',
+      color,
+      width: strokeWidth,
+      opacity: 1,
+      text: textInput.trim(),
+      fontSize: 16 * (scale > 1 ? 1 : scale),
+      points: [textPosition],
+    }
+    setAnnotations((prev) => ({
+      ...prev,
+      [currentPage]: [...(prev[currentPage] ?? []), newStroke],
+    }))
+    setDirty(true)
+    setTextInput('')
+    setTextPosition(null)
   }
 
   // Save annotations to DB
@@ -416,6 +451,11 @@ export default function PdfAnnotationViewer({
           <ToolButton active={tool === 'eraser'} onClick={() => setTool('eraser')} label="Eraser">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83a1.125 1.125 0 011.59 0l6.375 6.375a1.125 1.125 0 010 1.59L10.83 19.17a1.125 1.125 0 01-1.59 0z" />
+            </svg>
+          </ToolButton>
+          <ToolButton active={tool === 'text'} onClick={() => setTool('text')} label="Text">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
             </svg>
           </ToolButton>
         </div>
@@ -575,6 +615,36 @@ export default function PdfAnnotationViewer({
           />
         </div>
       </div>
+
+      {/* Text input popup */}
+      {textPosition && tool === 'text' && (
+        <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 bg-white">
+          <input
+            type="text"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder="Type your note..."
+            className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter') handlePlaceText() }}
+          />
+          <button
+            type="button"
+            onClick={handlePlaceText}
+            disabled={!textInput.trim()}
+            className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50 min-h-[32px]"
+          >
+            Place
+          </button>
+          <button
+            type="button"
+            onClick={() => { setTextPosition(null); setTextInput('') }}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 min-h-[32px]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   )
 }

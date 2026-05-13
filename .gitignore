@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Legacy/reference folders (not part of the app)
+/RedKiteApp/
+/assignment_3_sql/
+/wired_for_crochet_app/

@@ -9,6 +9,7 @@ interface PdfAnnotationViewerProps {
   projectId: string
   patternId: string
   patternTitle: string
+  fileType?: 'pdf' | 'image'
 }
 
 type Tool = 'pan' | 'freehand' | 'highlight' | 'eraser'
@@ -18,6 +19,7 @@ export default function PdfAnnotationViewer({
   projectId,
   patternId,
   patternTitle,
+  fileType = 'pdf',
 }: PdfAnnotationViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
@@ -37,7 +39,7 @@ export default function PdfAnnotationViewer({
   const [pdfDoc, setPdfDoc] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
 
-  // Load PDF.js and the document
+  // Load PDF.js and the document, or load image
   useEffect(() => {
     let cancelled = false
 
@@ -60,9 +62,35 @@ export default function PdfAnnotationViewer({
       }
     }
 
-    loadPdf()
+    async function loadImage() {
+      setLoading(true)
+      try {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          if (!cancelled) {
+            setPdfDoc(img)
+            setNumPages(1)
+            setLoading(false)
+          }
+        }
+        img.onerror = () => {
+          console.error('Failed to load image')
+          if (!cancelled) setLoading(false)
+        }
+        img.src = pdfUrl
+      } catch {
+        setLoading(false)
+      }
+    }
+
+    if (fileType === 'pdf') {
+      loadPdf()
+    } else {
+      loadImage()
+    }
     return () => { cancelled = true }
-  }, [pdfUrl])
+  }, [pdfUrl, fileType])
 
   // Load saved annotations from DB
   useEffect(() => {
@@ -75,27 +103,39 @@ export default function PdfAnnotationViewer({
     loadAnnotations()
   }, [projectId, patternId])
 
-  // Render current page
+  // Render current page (PDF) or image
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current) return
 
     async function renderPage() {
-      const doc = pdfDoc as { getPage: (n: number) => Promise<{ getViewport: (opts: { scale: number }) => { width: number; height: number }; render: (opts: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> } }> }
-      const page = await doc.getPage(currentPage)
-      const viewport = page.getViewport({ scale })
-
       const canvas = canvasRef.current!
       const ctx = canvas.getContext('2d')!
-      canvas.width = viewport.width
-      canvas.height = viewport.height
 
-      // Also size the overlay canvas
-      if (overlayRef.current) {
-        overlayRef.current.width = viewport.width
-        overlayRef.current.height = viewport.height
+      if (fileType === 'image') {
+        // Render image to canvas
+        const img = pdfDoc as HTMLImageElement
+        const w = Math.round(img.naturalWidth * scale)
+        const h = Math.round(img.naturalHeight * scale)
+        canvas.width = w
+        canvas.height = h
+        if (overlayRef.current) {
+          overlayRef.current.width = w
+          overlayRef.current.height = h
+        }
+        ctx.drawImage(img, 0, 0, w, h)
+      } else {
+        // Render PDF page
+        const doc = pdfDoc as { getPage: (n: number) => Promise<{ getViewport: (opts: { scale: number }) => { width: number; height: number }; render: (opts: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> } }> }
+        const page = await doc.getPage(currentPage)
+        const viewport = page.getViewport({ scale })
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+        if (overlayRef.current) {
+          overlayRef.current.width = viewport.width
+          overlayRef.current.height = viewport.height
+        }
+        await page.render({ canvasContext: ctx, viewport }).promise
       }
-
-      await page.render({ canvasContext: ctx, viewport }).promise
 
       // Redraw annotations for this page
       redrawAnnotations()
@@ -103,7 +143,7 @@ export default function PdfAnnotationViewer({
 
     renderPage()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc, currentPage, scale])
+  }, [pdfDoc, currentPage, scale, fileType])
 
   // Redraw annotations whenever they change
   const redrawAnnotations = useCallback(() => {
@@ -434,7 +474,8 @@ export default function PdfAnnotationViewer({
         </button>
       </div>
 
-      {/* Page navigation */}
+      {/* Page navigation — only for multi-page PDFs */}
+      {numPages > 1 && (
       <div className="flex items-center justify-center gap-3 px-3 py-2 border-b border-gray-100 bg-gray-50">
         <button
           type="button"
@@ -481,6 +522,32 @@ export default function PdfAnnotationViewer({
           +
         </button>
       </div>
+      )}
+
+      {/* Zoom only — for single page images */}
+      {numPages <= 1 && (
+      <div className="flex items-center justify-center gap-3 px-3 py-2 border-b border-gray-100 bg-gray-50">
+        <button
+          type="button"
+          onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[36px] min-w-[36px]"
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+        <span className="text-xs text-gray-600 min-w-[3rem] text-center">
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => setScale((s) => Math.min(3, s + 0.25))}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[36px] min-w-[36px]"
+          aria-label="Zoom in"
+        >
+          +
+        </button>
+      </div>
+      )}
 
       {/* Canvas area */}
       <div

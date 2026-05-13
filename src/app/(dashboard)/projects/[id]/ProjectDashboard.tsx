@@ -560,130 +560,86 @@ function PatternViewer({
       {/* Content */}
       {expanded && (
         <div className="border-t border-gray-100">
-          {/* Toolbar — context-aware */}
+          {/* Toolbar — only for written instructions (PDF/image has its own toolbar in PdfAnnotationViewer) */}
+          {hasInstructions && !(hasFile && (isPdf || isImage)) && (
           <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50 flex-wrap">
-            {/* Zoom for images */}
-            {hasFile && isImage && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                  aria-label="Zoom out"
-                >
-                  −
-                </button>
-                <span className="text-xs text-gray-600 min-w-[3rem] text-center">{zoom}%</span>
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                  aria-label="Zoom in"
-                >
-                  +
-                </button>
-                <div className="h-5 w-px bg-gray-300 ml-1" />
-              </div>
-            )}
-
-            {/* Resize for PDF viewer — handled by PdfAnnotationViewer */}
-
             {/* Text zoom for instructions */}
-            {hasInstructions && (
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-gray-500 mr-1">Text:</span>
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.max(50, z - 25))}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                  aria-label="Decrease text size"
-                >
-                  A−
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.min(200, z + 25))}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
-                  aria-label="Increase text size"
-                >
-                  A+
-                </button>
-                <div className="h-5 w-px bg-gray-300 ml-1" />
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-gray-500 mr-1">Text:</span>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(50, z - 25))}
+                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
+                aria-label="Decrease text size"
+              >
+                A−
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(200, z + 25))}
+                className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 min-h-[32px] min-w-[32px]"
+                aria-label="Increase text size"
+              >
+                A+
+              </button>
+              <div className="h-5 w-px bg-gray-300 ml-1" />
+            </div>
 
-            {/* Highlight color picker — only for written instructions */}
-            {hasInstructions && (
+            {/* Highlight color picker */}
+            <div className="flex items-center gap-1">
+              {highlightColors.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setAnnotationColor(c.value)}
+                  className={`h-6 w-6 rounded-full border-2 transition-all min-h-[24px] min-w-[24px] ${
+                    annotationColor === c.value ? 'border-gray-800 scale-110' : 'border-gray-300'
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                  aria-label={`Highlight color: ${c.label}`}
+                  title={c.label}
+                />
+              ))}
+            </div>
+
+            {highlights.length > 0 && (
               <>
-                <div className="flex items-center gap-1">
-                  {highlightColors.map((c) => (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => setAnnotationColor(c.value)}
-                      className={`h-6 w-6 rounded-full border-2 transition-all min-h-[24px] min-w-[24px] ${
-                        annotationColor === c.value ? 'border-gray-800 scale-110' : 'border-gray-300'
-                      }`}
-                      style={{ backgroundColor: c.value }}
-                      aria-label={`Highlight color: ${c.label}`}
-                      title={c.label}
-                    />
-                  ))}
-                </div>
-
-                {highlights.length > 0 && (
-                  <>
-                    <div className="h-5 w-px bg-gray-300" />
-                    <button
-                      type="button"
-                      onClick={() => setHighlights([])}
-                      className="text-xs text-red-600 hover:text-red-700 font-medium min-h-[32px] px-2"
-                    >
-                      Clear all
-                    </button>
-                  </>
-                )}
+                <div className="h-5 w-px bg-gray-300" />
+                <button
+                  type="button"
+                  onClick={() => setHighlights([])}
+                  className="text-xs text-red-600 hover:text-red-700 font-medium min-h-[32px] px-2"
+                >
+                  Clear all
+                </button>
               </>
             )}
           </div>
+          )}
 
           {/* Pattern content */}
           <div className="p-4 space-y-4">
-            {/* Uploaded file viewer (PDF or image) */}
-            {hasFile && (
-              <div>
-                {isPdf && patternFileUrl && (
-                  <PdfAnnotationViewer
-                    pdfUrl={patternFileUrl}
-                    projectId={projectId}
-                    patternId={pattern.id}
-                    patternTitle={pattern.title}
-                  />
-                )}
-                {isImage && (
-                  <div className="rounded-lg overflow-auto border border-gray-200 bg-gray-50 max-h-[600px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={patternFileUrl}
-                      alt={`Pattern: ${pattern.title}`}
-                      className="object-contain transition-all duration-200 mx-auto"
-                      style={{ width: `${zoom}%` }}
-                    />
-                  </div>
-                )}
-                {!isPdf && !isImage && (
-                  <div className="text-center py-6">
-                    <p className="text-sm text-gray-500 mb-2">File: {pattern.file_name}</p>
-                    <a
-                      href={patternFileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[44px]"
-                    >
-                      Download File
-                    </a>
-                  </div>
-                )}
+            {/* Uploaded file viewer (PDF or image) — with annotation support */}
+            {hasFile && patternFileUrl && (isPdf || isImage) && (
+              <PdfAnnotationViewer
+                pdfUrl={patternFileUrl}
+                projectId={projectId}
+                patternId={pattern.id}
+                patternTitle={pattern.title}
+                fileType={isPdf ? 'pdf' : 'image'}
+              />
+            )}
+            {hasFile && !isPdf && !isImage && (
+              <div className="text-center py-6">
+                <p className="text-sm text-gray-500 mb-2">File: {pattern.file_name}</p>
+                <a
+                  href={patternFileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[44px]"
+                >
+                  Download File
+                </a>
               </div>
             )}
 

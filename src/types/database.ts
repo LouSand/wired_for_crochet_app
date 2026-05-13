@@ -506,6 +506,30 @@ export type ProgressPhoto = Database['public']['Tables']['progress_photos']['Row
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type PricingExtra = Database['public']['Tables']['pricing_extras']['Row'];
 
+// Pattern annotations (not in generated types yet — manual definition)
+export type PatternAnnotation = {
+  id: string;
+  project_id: string;
+  pattern_id: string;
+  user_id: string;
+  page_number: number;
+  annotation_data: AnnotationStroke[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type AnnotationStroke = {
+  id: string;
+  type: 'freehand' | 'highlight' | 'text';
+  color: string;
+  width: number;
+  opacity: number;
+  points?: Array<{ x: number; y: number }>;
+  rect?: { x: number; y: number; w: number; h: number };
+  text?: string;
+  fontSize?: number;
+};
+
 // ============================================================
 // Insert type aliases
 // ============================================================

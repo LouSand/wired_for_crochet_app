@@ -8,6 +8,7 @@ import { useTimer } from '@/hooks/useTimer'
 import { incrementCounter, decrementCounter } from '@/lib/actions/counters'
 import { deleteProject } from '@/lib/actions/projects'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import PdfAnnotationViewer from '@/components/patterns/PdfAnnotationViewer'
 
 function formatLabel(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -214,7 +215,7 @@ export default function ProjectDashboard({
 
       {/* ═══ PATTERN VIEWER ═══ */}
       {pattern && (
-        <PatternViewer pattern={pattern} patternFileUrl={patternFileUrl} />
+        <PatternViewer pattern={pattern} patternFileUrl={patternFileUrl} projectId={project.id} />
       )}
 
       {/* ═══ QUICK NOTES PANEL ═══ */}
@@ -479,9 +480,11 @@ function CounterRow({ counter }: { counter: Counter }) {
 function PatternViewer({
   pattern,
   patternFileUrl,
+  projectId,
 }: {
   pattern: Pattern
   patternFileUrl: string | null
+  projectId: string
 }) {
   const [expanded, setExpanded] = useState(true)
   const [zoom, setZoom] = useState(100)
@@ -490,7 +493,6 @@ function PatternViewer({
   const [showAnnotationForm, setShowAnnotationForm] = useState(false)
   const [annotationNote, setAnnotationNote] = useState('')
   const [annotationColor, setAnnotationColor] = useState('#fef08a') // yellow
-  const [viewerHeight, setViewerHeight] = useState(500)
 
   const isUploaded = pattern.type === 'uploaded'
   const isPdf = pattern.file_name?.toLowerCase().endsWith('.pdf')
@@ -584,28 +586,7 @@ function PatternViewer({
               </div>
             )}
 
-            {/* Resize for PDF viewer */}
-            {hasFile && isPdf && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setViewerHeight((h) => Math.max(300, h - 100))}
-                  className="flex h-8 items-center rounded border border-gray-300 bg-white px-2 text-xs font-medium text-gray-600 hover:bg-gray-100 min-h-[32px]"
-                  aria-label="Shrink viewer"
-                >
-                  Shorter
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewerHeight((h) => Math.min(900, h + 100))}
-                  className="flex h-8 items-center rounded border border-gray-300 bg-white px-2 text-xs font-medium text-gray-600 hover:bg-gray-100 min-h-[32px]"
-                  aria-label="Expand viewer"
-                >
-                  Taller
-                </button>
-                <div className="h-5 w-px bg-gray-300 ml-1" />
-              </div>
-            )}
+            {/* Resize for PDF viewer — handled by PdfAnnotationViewer */}
 
             {/* Text zoom for instructions */}
             {hasInstructions && (
@@ -671,18 +652,13 @@ function PatternViewer({
             {/* Uploaded file viewer (PDF or image) */}
             {hasFile && (
               <div>
-                {isPdf && (
-                  <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                    <iframe
-                      src={patternFileUrl}
-                      className="w-full transition-all duration-200"
-                      style={{ height: `${viewerHeight}px` }}
-                      title={`Pattern: ${pattern.title}`}
-                    />
-                    <p className="text-[10px] text-gray-400 text-center py-1 bg-gray-100">
-                      Use the PDF controls above to navigate pages. Drag to resize height.
-                    </p>
-                  </div>
+                {isPdf && patternFileUrl && (
+                  <PdfAnnotationViewer
+                    pdfUrl={patternFileUrl}
+                    projectId={projectId}
+                    patternId={pattern.id}
+                    patternTitle={pattern.title}
+                  />
                 )}
                 {isImage && (
                   <div className="rounded-lg overflow-auto border border-gray-200 bg-gray-50 max-h-[600px]">

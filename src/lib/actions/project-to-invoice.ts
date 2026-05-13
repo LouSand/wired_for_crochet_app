@@ -103,6 +103,7 @@ export async function getProjectInvoiceData(projectId: string): Promise<{
     .order('created_at', { ascending: true })
 
   // Try to find a matching customer in the customers table
+  // If not found, auto-create one so the invoice has a linked customer
   let customerId: string | null = null
   if (project.customer_name) {
     const { data: customer } = await supabase
@@ -115,6 +116,20 @@ export async function getProjectInvoiceData(projectId: string): Promise<{
 
     if (customer) {
       customerId = customer.id
+    } else {
+      // Auto-create customer record so user can add email later
+      const { data: newCustomer } = await supabase
+        .from('customers')
+        .insert({
+          user_id: user.id,
+          name: project.customer_name,
+        })
+        .select('id')
+        .single()
+
+      if (newCustomer) {
+        customerId = newCustomer.id
+      }
     }
   }
 

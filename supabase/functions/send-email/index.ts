@@ -1,8 +1,10 @@
 /**
  * Supabase Edge Function: send-email
  *
- * Stub implementation that logs the email request and returns success.
- * Replace with Resend API integration when ready for production email sending.
+ * Sends emails via Resend API.
+ * Set RESEND_API_KEY and EMAIL_FROM in your Supabase project secrets.
+ *
+ * If RESEND_API_KEY is not set, falls back to stub mode (logs only).
  *
  * Expected request body:
  * {
@@ -11,19 +13,12 @@
  *   body: string        - Email body text
  *   document_type: 'invoice' | 'quote'
  *   document_id: string - UUID of the document
- *   attachments?: Array<{ filename: string; content: string }> - Base64-encoded PDF attachments
  * }
- *
- * Future Resend integration:
- * 1. Install Resend SDK: import { Resend } from 'resend'
- * 2. Initialize: const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
- * 3. Call: await resend.emails.send({ from, to, subject, html, attachments })
  */
 
 // @ts-ignore - Deno types
 Deno.serve(async (req: Request) => {
   try {
-    // Only accept POST requests
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
@@ -34,7 +29,6 @@ Deno.serve(async (req: Request) => {
     const body = await req.json()
     const { to, subject, body: emailBody, document_type, document_id } = body
 
-    // Validate required fields
     if (!to || !subject) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: to, subject' }),
@@ -42,33 +36,71 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Log the email request (stub behavior)
-    console.log('=== EMAIL SEND REQUEST ===')
-    console.log(`To: ${to}`)
-    console.log(`Subject: ${subject}`)
-    console.log(`Body: ${emailBody}`)
-    console.log(`Document: ${document_type} / ${document_id}`)
-    console.log('=========================')
+    // @ts-ignore - Deno env
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    // @ts-ignore - Deno env
+    const emailFrom = Deno.env.get('EMAIL_FROM') || 'Wired for Crochet <noreply@wiredforcrochet.com>'
 
-    // TODO: Replace with actual Resend integration
-    // const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
-    // const { data, error } = await resend.emails.send({
-    //   from: 'invoicing@yourdomain.com',
-    //   to: [to],
-    //   subject: subject,
-    //   html: `<p>${emailBody}</p>`,
-    //   attachments: body.attachments?.map((a: { filename: string; content: string }) => ({
-    //     filename: a.filename,
-    //     content: Buffer.from(a.content, 'base64'),
-    //   })),
-    // })
+    if (!resendApiKey) {
+      // Stub mode — log and return success
+      console.log('=== EMAIL STUB (no RESEND_API_KEY set) ===')
+      console.log(`To: ${to}`)
+      console.log(`Subject: ${subject}`)
+      console.log(`Body: ${emailBody}`)
+      console.log(`Document: ${document_type} / ${document_id}`)
+      console.log('==========================================')
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Email logged (stub mode — set RESEND_API_KEY to send real emails)',
+          recipient: to,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Send via Resend API
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: [to],
+        subject: subject,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">${subject}</h2>
+            <p style="color: #374151; line-height: 1.6;">${emailBody}</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+            <p style="color: #9ca3af; font-size: 12px;">
+              Sent from Wired for Crochet
+            </p>
+          </div>
+        `,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('Resend API error:', errorData)
+      return new Response(
+        JSON.stringify({ error: `Email send failed: ${errorData.message || 'Unknown error'}` }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const data = await response.json()
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Email queued successfully (stub - no actual email sent)',
+        message: 'Email sent successfully',
         recipient: to,
-        subject: subject,
+        id: data.id,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )

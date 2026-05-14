@@ -257,3 +257,269 @@ export async function generateTaxSummary(taxYearEnd: number): Promise<{
 
   return { data: summary, error: null }
 }
+
+// ─── Tax Config ──────────────────────────────────────────────────────────────
+
+import type { TaxConfig, TaxEstimate, EvidenceStatus, YearEndChecklist, TaxYearStatus } from '@/types/tax'
+
+export async function getTaxConfig(): Promise<{ data: TaxConfig | null; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('tax_config')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  if (error && error.code === 'PGRST116') {
+    // No config yet — create default
+    const { data: newConfig } = await supabase
+      .from('tax_config')
+      .insert({ user_id: user.id })
+      .select()
+      .single()
+    return { data: newConfig as TaxConfig | null, error: null }
+  }
+
+  if (error) return { data: null, error: 'Failed to fetch tax config.' }
+  return { data: data as TaxConfig, error: null }
+}
+
+export async function updateTaxConfig(formData: FormData): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const accountingBasis = formData.get('accounting_basis') as string
+  const personalAllowance = parseFloat(formData.get('personal_allowance') as string)
+  const qualifyingIncome = formData.get('qualifying_income') as string
+
+  const { error } = await supabase
+    .from('tax_config')
+    .upsert({
+      user_id: user.id,
+      accounting_basis: accountingBasis || 'cash',
+      personal_allowance: isNaN(personalAllowance) ? 12570 : personalAllowance,
+      qualifying_income: qualifyingIncome ? parseFloat(qualifyingIncome) : null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+
+  if (error) return { error: 'Failed to save tax config.' }
+  return { error: null }
+}
+
+// ─── Tax Estimate Calculator ─────────────────────────────────────────────────
+
+export async function calculateTaxEstimate(taxYearEnd: number): Promise<{
+  data: TaxEstimate | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'Not authenticated' }
+
+  // Get tax config
+  const { data: config } = await getTaxConfig()
+  if (!config) return { data: null, error: 'Tax config not found.' }
+
+  // Get SA103 summary for the profit figure
+  const { data: summary } = await generateTaxSummary(taxYearEnd)
+  if (!summary) return { data: null, error: 'Could not generate tax summary.' }
+
+  const taxableProfit = Math.max(0, summary.box21_netProfit)
+  const personalAllowance = config.personal_allowance
+  const taxableAfterAllowance = Math.max(0, taxableProfit - personalAllowance)
+
+  // Income tax bands
+  const basicRateLimit = config.basic_rate_threshold - personalAllowance
+  const higherRateLimit = config.higher_rate_threshold - personalAllowance
+
+  let basicRate = 0
+  let higherRate = 0
+  let additionalRate = 0
+
+  if (taxableAfterAllowance > 0) {
+    const basicTaxable = Math.min(taxableAfterAllowance, basicRateLimit)
+    basicRate = basicTaxable * 0.20
+
+    if (taxableAfterAllowance > basicRateLimit) {
+      const higherTaxable = Math.min(taxableAfterAllowance - basicRateLimit, higherRateLimit - basicRateLimit)
+      higherRate = higherTaxable * 0.40
+
+      if (taxableAfterAllowance > higherRateLimit) {
+        const additionalTaxable = taxableAfterAllowance - higherRateLimit
+        additionalRate = additionalTaxable * 0.45
+      }
+    }
+  }
+
+  const totalIncomeTax = basicRate + higherRate + additionalRate
+
+  // National Insurance
+  let class2 = 0
+  let class4 = 0
+
+  if (taxableProfit > config.class4_lower_threshold) {
+    // Class 2: flat rate per week (52 weeks)
+    class2 = config.class2_weekly_rate * 52
+
+    // Class 4
+    const class4Lower = Math.min(taxableProfit, config.class4_upper_threshold) - config.class4_lower_threshold
+    class4 = class4Lower * (config.class4_lower_rate / 100)
+
+    if (taxableProfit > config.class4_upper_threshold) {
+      const class4Upper = taxableProfit - config.class4_upper_threshold
+      class4 += class4Upper * (config.class4_upper_rate / 100)
+    }
+  }
+
+  const totalNI = class2 + class4
+  const totalTaxDue = totalIncomeTax + totalNI
+  const effectiveRate = taxableProfit > 0 ? (totalTaxDue / taxableProfit) * 100 : 0
+
+  return {
+    data: {
+      taxableProfit,
+      personalAllowance,
+      taxableAfterAllowance,
+      incomeTax: { basicRate, higherRate, additionalRate, total: totalIncomeTax },
+      nationalInsurance: { class2, class4, total: totalNI },
+      totalTaxDue,
+      effectiveRate: Math.round(effectiveRate * 10) / 10,
+    },
+    error: null,
+  }
+}
+
+// ─── Evidence Completeness ───────────────────────────────────────────────────
+
+export async function getEvidenceStatus(taxYearEnd: number): Promise<{
+  data: EvidenceStatus | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'Not authenticated' }
+
+  const taxYearStart = `${taxYearEnd - 1}-04-06`
+  const taxYearEndDate = `${taxYearEnd}-04-05`
+
+  // Expenses
+  const { data: expenses } = await supabase
+    .from('purchases')
+    .select('id, purchase_date, description, cost, invoice_path')
+    .eq('user_id', user.id)
+    .gte('purchase_date', taxYearStart)
+    .lte('purchase_date', taxYearEndDate)
+
+  const allExpenses = expenses ?? []
+  const expensesWithEvidence = allExpenses.filter((e) => e.invoice_path)
+  const expensesWithoutEvidence = allExpenses
+    .filter((e) => !e.invoice_path)
+    .map((e) => ({ id: e.id, date: e.purchase_date, description: e.description, amount: e.cost }))
+
+  // Income (invoices)
+  const { data: invoices } = await supabase
+    .from('invoices')
+    .select('id, issue_date, invoice_number, total, status')
+    .eq('user_id', user.id)
+    .gte('issue_date', taxYearStart)
+    .lte('issue_date', taxYearEndDate)
+
+  const allInvoices = invoices ?? []
+  const paidInvoices = allInvoices.filter((i) => i.status === 'paid')
+  // Invoices are their own evidence (they're generated by the system)
+  const incomeWithoutEvidence = allInvoices
+    .filter((i) => i.status !== 'paid' && i.status !== 'draft')
+    .map((i) => ({ id: i.id, date: i.issue_date, description: `Invoice ${i.invoice_number}`, amount: i.total }))
+
+  const totalItems = allExpenses.length + paidInvoices.length
+  const itemsWithEvidence = expensesWithEvidence.length + paidInvoices.length
+  const completionPercent = totalItems > 0 ? Math.round((itemsWithEvidence / totalItems) * 100) : 100
+
+  // Warnings
+  const warnings: string[] = []
+  if (expensesWithoutEvidence.length > 0) {
+    warnings.push(`${expensesWithoutEvidence.length} expense(s) missing receipts`)
+  }
+  if (incomeWithoutEvidence.length > 0) {
+    warnings.push(`${incomeWithoutEvidence.length} invoice(s) unpaid/unresolved`)
+  }
+
+  return {
+    data: {
+      totalExpenses: allExpenses.length,
+      expensesWithEvidence: expensesWithEvidence.length,
+      expensesWithoutEvidence,
+      totalIncome: paidInvoices.length,
+      incomeWithEvidence: paidInvoices.length,
+      incomeWithoutEvidence,
+      completionPercent,
+      warnings,
+    },
+    error: null,
+  }
+}
+
+// ─── Year-End Checklist ──────────────────────────────────────────────────────
+
+export async function getChecklist(taxYear: number): Promise<{
+  data: { checklist: YearEndChecklist; status: TaxYearStatus } | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('tax_year_checklists')
+    .select('checklist_data, status')
+    .eq('user_id', user.id)
+    .eq('tax_year', taxYear)
+    .single()
+
+  if (error && error.code === 'PGRST116') {
+    // Create default
+    const defaultChecklist: YearEndChecklist = {
+      receipts_uploaded: 'not_done',
+      stock_valued: 'not_done',
+      mileage_complete: 'not_done',
+      use_of_home: 'not_done',
+      capital_purchases: 'not_done',
+      private_use_adjustments: 'not_done',
+      trading_allowance: 'not_done',
+      bad_debts: 'not_done',
+      accountant_review: 'not_done',
+      final_review: 'not_done',
+    }
+    return { data: { checklist: defaultChecklist, status: 'draft' }, error: null }
+  }
+
+  if (error) return { data: null, error: 'Failed to fetch checklist.' }
+  return { data: { checklist: data.checklist_data as YearEndChecklist, status: data.status as TaxYearStatus }, error: null }
+}
+
+export async function saveChecklist(
+  taxYear: number,
+  checklist: YearEndChecklist,
+  status: TaxYearStatus
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('tax_year_checklists')
+    .upsert({
+      user_id: user.id,
+      tax_year: taxYear,
+      checklist_data: checklist,
+      status,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,tax_year' })
+
+  if (error) return { error: 'Failed to save checklist.' }
+  return { error: null }
+}

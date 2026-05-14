@@ -1,22 +1,74 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { generateTaxSummary, type SA103Summary } from '@/lib/actions/tax-summary'
+import {
+  generateTaxSummary,
+  getTaxConfig,
+  updateTaxConfig,
+  calculateTaxEstimate,
+  getEvidenceStatus,
+  getChecklist,
+  saveChecklist,
+  type SA103Summary,
+} from '@/lib/actions/tax-summary'
+import type { TaxConfig, TaxEstimate, EvidenceStatus, YearEndChecklist, TaxYearStatus } from '@/types/tax'
+import { CHECKLIST_ITEMS } from '@/types/tax'
 
 export default function TaxReturnPage() {
   const [taxYear, setTaxYear] = useState(new Date().getFullYear())
   const [summary, setSummary] = useState<SA103Summary | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [config, setConfig] = useState<TaxConfig | null>(null)
+  const [taxEstimate, setTaxEstimate] = useState<TaxEstimate | null>(null)
+  const [evidence, setEvidence] = useState<EvidenceStatus | null>(null)
+  const [checklist, setChecklist] = useState<YearEndChecklist | null>(null)
+  const [checklistStatus, setChecklistStatus] = useState<TaxYearStatus>('draft')
+  const [activeTab, setActiveTab] = useState<'summary' | 'estimate' | 'evidence' | 'checklist' | 'settings'>('summary')
+
+  // Load tax config on mount
+  useEffect(() => {
+    async function loadConfig() {
+      const { data } = await getTaxConfig()
+      if (data) setConfig(data)
+    }
+    loadConfig()
+  }, [])
 
   const handleGenerate = async () => {
     setLoading(true)
     setError(null)
-    const { data, error: err } = await generateTaxSummary(taxYear)
-    if (err) setError(err)
-    else setSummary(data)
+    const [summaryResult, estimateResult, evidenceResult, checklistResult] = await Promise.all([
+      generateTaxSummary(taxYear),
+      calculateTaxEstimate(taxYear),
+      getEvidenceStatus(taxYear),
+      getChecklist(taxYear),
+    ])
+    if (summaryResult.error) setError(summaryResult.error)
+    else setSummary(summaryResult.data)
+    if (estimateResult.data) setTaxEstimate(estimateResult.data)
+    if (evidenceResult.data) setEvidence(evidenceResult.data)
+    if (checklistResult.data) {
+      setChecklist(checklistResult.data.checklist)
+      setChecklistStatus(checklistResult.data.status)
+    }
     setLoading(false)
+  }
+
+  const handleSaveConfig = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    await updateTaxConfig(formData)
+    const { data } = await getTaxConfig()
+    if (data) setConfig(data)
+  }
+
+  const handleChecklistChange = async (key: keyof YearEndChecklist, value: 'done' | 'not_done' | 'not_applicable') => {
+    if (!checklist) return
+    const updated = { ...checklist, [key]: value }
+    setChecklist(updated)
+    await saveChecklist(taxYear, updated, checklistStatus)
   }
 
   return (
@@ -61,10 +113,223 @@ export default function TaxReturnPage() {
           </button>
         </div>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+        {/* Accounting basis indicator */}
+        {config && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              config.accounting_basis === 'cash' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+            }`}>
+              {config.accounting_basis === 'cash' ? 'Cash Basis' : 'Traditional Accounting'}
+            </span>
+            <button type="button" onClick={() => setActiveTab('settings')} className="text-xs text-gray-500 hover:text-purple-600">
+              Change →
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* SA103 Summary */}
+      {/* Tabs */}
       {summary && (
+        <div className="border-b border-gray-200">
+          <nav className="flex gap-1 overflow-x-auto" aria-label="Tax return sections">
+            {[
+              { id: 'summary' as const, label: 'SA103 Summary' },
+              { id: 'estimate' as const, label: 'Tax Estimate' },
+              { id: 'evidence' as const, label: 'Evidence' },
+              { id: 'checklist' as const, label: 'Year-End Checklist' },
+              { id: 'settings' as const, label: 'Settings' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`shrink-0 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-colors min-h-[40px] ${
+                  activeTab === tab.id
+                    ? 'bg-white border border-b-0 border-gray-200 text-purple-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {tab.label}
+                {tab.id === 'evidence' && evidence && evidence.completionPercent < 100 && (
+                  <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">!</span>
+                )}
+                {tab.id === 'checklist' && checklist && (
+                  <span className="ml-1.5 text-[10px] text-gray-400">
+                    {Object.values(checklist).filter((v) => v === 'done').length}/{Object.values(checklist).length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {/* Tab: Tax Estimate */}
+      {summary && activeTab === 'estimate' && taxEstimate && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-xs text-amber-800">
+              ⚠️ <strong>Estimates only</strong> — These figures are approximate and do not constitute financial advice.
+              They assume self-employment is your only income source. Consult an accountant for accurate figures.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-xs text-gray-500">Taxable Profit</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">£{taxEstimate.taxableProfit.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-400">After personal allowance: £{taxEstimate.taxableAfterAllowance.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-xs text-gray-500">Estimated Income Tax</p>
+              <p className="mt-1 text-2xl font-bold text-red-700">£{taxEstimate.incomeTax.total.toFixed(2)}</p>
+              <div className="mt-1 text-[10px] text-gray-400 space-y-0.5">
+                <p>Basic rate (20%): £{taxEstimate.incomeTax.basicRate.toFixed(2)}</p>
+                {taxEstimate.incomeTax.higherRate > 0 && <p>Higher rate (40%): £{taxEstimate.incomeTax.higherRate.toFixed(2)}</p>}
+              </div>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-xs text-gray-500">Estimated National Insurance</p>
+              <p className="mt-1 text-2xl font-bold text-red-700">£{taxEstimate.nationalInsurance.total.toFixed(2)}</p>
+              <div className="mt-1 text-[10px] text-gray-400 space-y-0.5">
+                <p>Class 2: £{taxEstimate.nationalInsurance.class2.toFixed(2)}</p>
+                <p>Class 4: £{taxEstimate.nationalInsurance.class4.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border-2 border-red-200 bg-red-50 p-5 text-center">
+            <p className="text-xs text-gray-500">Estimated Total Tax Due</p>
+            <p className="mt-1 text-3xl font-bold text-red-800">£{taxEstimate.totalTaxDue.toFixed(2)}</p>
+            <p className="mt-1 text-xs text-gray-500">Effective rate: {taxEstimate.effectiveRate}%</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Evidence */}
+      {summary && activeTab === 'evidence' && evidence && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-gray-900">Evidence Completeness</h3>
+              <span className={`text-lg font-bold ${evidence.completionPercent === 100 ? 'text-green-700' : 'text-amber-700'}`}>
+                {evidence.completionPercent}%
+              </span>
+            </div>
+            <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${evidence.completionPercent === 100 ? 'bg-green-500' : 'bg-amber-500'}`}
+                style={{ width: `${evidence.completionPercent}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {evidence.expensesWithEvidence} of {evidence.totalExpenses} expenses have receipts •
+              {evidence.incomeWithEvidence} of {evidence.totalIncome} income entries verified
+            </p>
+          </div>
+
+          {evidence.warnings.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              {evidence.warnings.map((w, i) => (
+                <p key={i} className="text-xs text-amber-800">⚠️ {w}</p>
+              ))}
+            </div>
+          )}
+
+          {evidence.expensesWithoutEvidence.length > 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Expenses Missing Receipts</h4>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {evidence.expensesWithoutEvidence.map((exp) => (
+                  <div key={exp.id} className="flex items-center justify-between rounded-lg bg-red-50 p-2.5 text-xs">
+                    <span className="text-gray-700">{formatDate(exp.date)} — {exp.description}</span>
+                    <span className="font-medium text-red-700">£{exp.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/business/expenses" className="mt-3 inline-flex text-xs text-purple-600 hover:text-purple-700 font-medium">
+                Go to Expenses to add receipts →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Year-End Checklist */}
+      {summary && activeTab === 'checklist' && checklist && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-gray-900">Year-End Checklist</h3>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                checklistStatus === 'ready' ? 'bg-green-100 text-green-700' :
+                checklistStatus === 'exported' ? 'bg-blue-100 text-blue-700' :
+                checklistStatus === 'needs_review' ? 'bg-amber-100 text-amber-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {checklistStatus.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {CHECKLIST_ITEMS.map((item) => (
+                <div key={item.key} className="flex items-start gap-3 rounded-lg border border-gray-100 p-3">
+                  <select
+                    value={checklist[item.key]}
+                    onChange={(e) => handleChecklistChange(item.key, e.target.value as 'done' | 'not_done' | 'not_applicable')}
+                    className={`shrink-0 rounded-md border px-2 py-1 text-xs font-medium min-h-[28px] ${
+                      checklist[item.key] === 'done' ? 'border-green-300 bg-green-50 text-green-700' :
+                      checklist[item.key] === 'not_applicable' ? 'border-gray-200 bg-gray-50 text-gray-500' :
+                      'border-amber-300 bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    <option value="not_done">To Do</option>
+                    <option value="done">Done ✓</option>
+                    <option value="not_applicable">N/A</option>
+                  </select>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">{item.label}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{item.help}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Settings */}
+      {activeTab === 'settings' && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Tax Settings</h3>
+          <form onSubmit={handleSaveConfig} className="space-y-4 max-w-md">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Accounting Basis</label>
+              <select name="accounting_basis" defaultValue={config?.accounting_basis ?? 'cash'} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="cash">Cash Basis (recommended for most small businesses)</option>
+                <option value="traditional">Traditional Accounting (accruals)</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Cash basis: only count money actually received/paid. Simpler for most self-employed.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Personal Allowance (£)</label>
+              <input type="number" name="personal_allowance" step="0.01" defaultValue={config?.personal_allowance ?? 12570} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <p className="mt-1 text-xs text-gray-500">Current default: £12,570 (2024/25). Reduced if total income exceeds £100,000.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Qualifying Income for MTD (£)</label>
+              <input type="number" name="qualifying_income" step="0.01" defaultValue={config?.qualifying_income ?? ''} placeholder="Enter your estimated annual income" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <p className="mt-1 text-xs text-gray-500">Used to check if you need Making Tax Digital. Leave blank if unsure.</p>
+            </div>
+            <button type="submit" className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 min-h-[40px]">
+              Save Settings
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* SA103 Summary */}
+      {summary && activeTab === 'summary' && (
         <div className="space-y-6">
           {/* Actions bar */}
           <div className="flex flex-wrap gap-3">

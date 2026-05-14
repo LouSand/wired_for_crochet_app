@@ -53,9 +53,10 @@ export default function LibraryPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {library.map((item) => (
-              <div
+              <Link
                 key={item.pattern_id}
-                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                href={`/patterns/${item.pattern_id}`}
+                className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-purple-200 transition-all"
               >
                 <h3 className="text-sm font-semibold text-gray-900 truncate">{item.title}</h3>
                 <div className="mt-1 flex items-center gap-2">
@@ -68,7 +69,7 @@ export default function LibraryPage() {
                     Added {new Date(item.created_at).toLocaleDateString('en-GB')}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -222,15 +222,15 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 
 **Features:**
 - [ ] OCR/parsing of uploaded pattern PDFs
-- [ ] Extract row counts and stitch counts from text
-- [ ] Auto-generate counters from parsed patterns
-- [ ] Smart suggestions for progress tracking
-- [ ] Pattern difficulty estimation
+- [x] Extract row counts and stitch counts from text
+- [x] Auto-generate counters from parsed patterns
+- [x] Smart suggestions for progress tracking
+- [x] Pattern difficulty estimation
 
-**Status:** Not started  
-**Files affected:** New AI service, pattern parsing utilities  
+**Status:** Mostly done (text parsing complete, OCR for PDFs deferred — requires external AI service)  
+**Files affected:** `pattern-parser.ts`, `pattern-parser actions`, `PatternAnalysisPanel.tsx`  
 **Dependencies:** Phase 4 (pattern annotations), Phase 7 (counters)  
-**Notes:** This is a future differentiator. Start with simple text parsing before investing in AI/OCR.
+**Notes:** Text-based pattern parsing detects rows, rounds, sections, stitch counts, and estimates difficulty. Auto-creates counters with targets. PDF OCR would require an external service like Google Vision or OpenAI.
 
 ---
 

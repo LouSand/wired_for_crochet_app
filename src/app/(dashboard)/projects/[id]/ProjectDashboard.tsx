@@ -10,6 +10,7 @@ import { deleteProject, updateProject } from '@/lib/actions/projects'
 import { deleteAllAnnotations } from '@/lib/actions/pattern-annotations'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import PdfAnnotationViewer from '@/components/patterns/PdfAnnotationViewer'
+import PatternAnalysisPanel from '@/components/patterns/PatternAnalysisPanel'
 
 function formatLabel(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -247,6 +248,11 @@ export default function ProjectDashboard({
       {/* ═══ PATTERN VIEWER ═══ */}
       {pattern && (
         <PatternViewer pattern={pattern} patternFileUrl={patternFileUrl} projectId={project.id} />
+      )}
+
+      {/* ═══ PATTERN ANALYSIS (auto-counters) ═══ */}
+      {pattern && pattern.instructions && (
+        <PatternAnalysisPanel patternId={pattern.id} projectId={project.id} />
       )}
 
       {/* ═══ QUICK NOTES PANEL ═══ */}

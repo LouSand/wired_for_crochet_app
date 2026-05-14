@@ -23,7 +23,7 @@ export async function getMarketplacePatterns(opts?: {
 
   let query = supabase
     .from('patterns')
-    .select('*, seller_profiles!inner(display_name, slug, avatar_path)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .eq('is_published', true)
 
   if (opts?.search) {
@@ -84,7 +84,7 @@ export async function getMarketplacePattern(slug: string): Promise<{
 
   const { data, error } = await supabase
     .from('patterns')
-    .select('*, seller_profiles(display_name, slug, bio, avatar_path)')
+    .select('*')
     .eq('slug', slug)
     .eq('is_published', true)
     .single()
@@ -226,14 +226,21 @@ export async function publishPattern(
 
   if (!pattern) return { error: 'Pattern not found.' }
 
-  // Check seller profile exists
+  // Check seller profile exists — create one automatically if not
   const { data: seller } = await supabase
     .from('seller_profiles')
     .select('id')
     .eq('user_id', user.id)
     .single()
 
-  if (!seller) return { error: 'Please set up your seller profile first.' }
+  if (!seller) {
+    // Auto-create a basic seller profile
+    await supabase.from('seller_profiles').insert({
+      user_id: user.id,
+      display_name: pattern.title.split(' ')[0] + ' Designs',
+      slug: user.id.slice(0, 8),
+    })
+  }
 
   // Generate slug
   const slug = pattern.title

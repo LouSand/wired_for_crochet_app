@@ -15,8 +15,10 @@ import {
   deleteUCIncome,
   deleteUCExpense,
 } from '@/lib/actions/universal-credit'
+import { suggestCategory } from '@/lib/actions/ai-categorise'
 import type { UCReportingPeriod, UCPeriodSummary, UCPeriodStatus } from '@/types/universal-credit'
 import { UC_EXPENSE_CATEGORIES, UC_PAYMENT_METHODS } from '@/types/universal-credit'
+import UCReminders from '@/components/business/UCReminders'
 
 const STATUS_COLORS: Record<UCPeriodStatus, string> = {
   draft: 'bg-gray-100 text-gray-700',
@@ -120,6 +122,9 @@ export default function UniversalCreditPage() {
       {actionMessage && (
         <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">{actionMessage}</div>
       )}
+
+      {/* Reminder notifications */}
+      <UCReminders />
 
       {/* Period management */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -227,6 +232,17 @@ export default function UniversalCreditPage() {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
+            <a
+              href={`/api/uc-report/${selectedPeriod}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 min-h-[36px] inline-flex items-center gap-1"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download PDF Report
+            </a>
             <button type="button" onClick={handleImportInvoices} className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-100 min-h-[36px]">
               Import Payments from Invoices
             </button>
@@ -262,26 +278,9 @@ export default function UniversalCreditPage() {
             </form>
           )}
 
-          {/* Add Expense Form */}
+          {/* Add Expense Form with AI categorisation */}
           {showAddExpense && (
-            <form onSubmit={handleAddExpense} className="rounded-lg border border-red-200 bg-red-50 p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-red-900">Add Expense</h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input type="number" name="amount" step="0.01" required placeholder="Amount (£)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <input type="date" name="date_incurred" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <input type="text" name="description" required placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <select name="category" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  <option value="">Category...</option>
-                  {UC_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
-                </select>
-                <input type="text" name="supplier" placeholder="Supplier (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <textarea name="notes" placeholder="Notes (optional)" rows={2} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              <div className="flex gap-2">
-                <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Add</button>
-                <button type="button" onClick={() => setShowAddExpense(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-              </div>
-            </form>
+            <ExpenseFormWithAI onSubmit={handleAddExpense} onCancel={() => setShowAddExpense(false)} />
           )}
 
           {/* Income list */}
@@ -378,4 +377,93 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// ─── Expense Form with AI Category Suggestion ────────────────────────────────
+
+function ExpenseFormWithAI({ onSubmit, onCancel }: { onSubmit: (e: React.FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+  const [aiSuggestion, setAiSuggestion] = useState<{ category: string; confidence: string } | null>(null)
+
+  // Debounced AI suggestion as user types description
+  useEffect(() => {
+    if (description.length < 4) {
+      setAiSuggestion(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const { suggestion, confidence } = await suggestCategory(description)
+      if (suggestion) {
+        setAiSuggestion({ category: suggestion, confidence })
+        // Auto-select if high confidence and no manual selection yet
+        if (confidence === 'high' && !category) {
+          setCategory(suggestion)
+        }
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [description])
+
+  const handleAcceptSuggestion = () => {
+    if (aiSuggestion) {
+      setCategory(aiSuggestion.category)
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="rounded-lg border border-red-200 bg-red-50 p-4 space-y-3">
+      <h3 className="text-sm font-semibold text-red-900">Add Expense</h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <input type="number" name="amount" step="0.01" required placeholder="Amount (£)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input type="date" name="date_incurred" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <div className="sm:col-span-2">
+          <input
+            type="text"
+            name="description"
+            required
+            placeholder="Description (e.g. 'Yarn from Hobbycraft')"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          {/* AI suggestion */}
+          {aiSuggestion && aiSuggestion.category !== category && (
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[10px] text-purple-600">
+                ✨ Suggested: <strong>{aiSuggestion.category.replace(/_/g, ' ')}</strong>
+                <span className="text-gray-400 ml-1">({aiSuggestion.confidence})</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleAcceptSuggestion}
+                className="text-[10px] text-purple-700 underline hover:text-purple-800"
+              >
+                Use this
+              </button>
+            </div>
+          )}
+        </div>
+        <select
+          name="category"
+          required
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Category...</option>
+          {UC_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
+        </select>
+        <input type="text" name="supplier" placeholder="Supplier (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+      </div>
+      <textarea name="notes" placeholder="Notes (optional)" rows={2} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+      <div className="flex gap-2">
+        <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Add</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+      </div>
+    </form>
+  )
 }

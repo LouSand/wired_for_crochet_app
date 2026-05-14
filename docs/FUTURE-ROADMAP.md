@@ -4,35 +4,35 @@ Everything we want to build next. Organised by priority and effort.
 
 ---
 
-## 🧶 Knitting Support (Make it Crochet + Knitting)
+## 🧶 Knitting Support (Make it Crochet + Knitting) ✅
 
 **Goal:** The app works for both crochet and knitting. Users choose their craft (or both).
 
 ### Changes needed:
-- [ ] Add "craft type" to user settings: Crochet / Knitting / Both
-- [ ] Rename "Hooks" section to "Tools" (hooks + needles)
-- [ ] Add needle types: straight, circular, DPN, interchangeable
-- [ ] Add needle sizes (metric + US/UK sizing)
-- [ ] Pattern terminology field: "Crochet (UK terms)" / "Crochet (US terms)" / "Knitting"
-- [ ] Stitch dictionary covers both crafts
+- [x] Add "craft type" to user settings: Crochet / Knitting / Both
+- [x] Add needle types: straight, circular, DPN, interchangeable
+- [x] Add needle sizes (metric + US/UK sizing)
+- [x] Pattern terminology field: "Crochet (UK terms)" / "Crochet (US terms)" / "Knitting"
+- [x] Stitch dictionary covers both crafts
+- [x] Yarn weight categories work for both (already universal)
+- [x] Project creation asks: Crochet or Knitting? (craft_type field)
+- [x] Marketplace patterns tagged by craft type
+- [ ] Rename "Hooks" section to "Tools" (hooks + needles) — UI rename pending
 - [ ] Counter labels adapt (rows/rounds for both, stitches per row)
-- [ ] Yarn weight categories work for both (already universal)
-- [ ] Project creation asks: Crochet or Knitting?
-- [ ] Marketplace patterns tagged by craft type
 - [ ] Hook recommendations become "tool recommendations"
 
-### Effort: Medium (2-3 sessions)
+### Effort: ~~2-3 sessions~~ Done (DB + actions complete, minor UI rename remaining)
 
 ---
 
-## 🌍 US/UK Crochet Terminology
+## 🌍 US/UK Crochet Terminology ✅
 
 **Goal:** Patterns clearly indicate which terminology they use. Eventually offer auto-translation.
 
 ### Features:
-- [ ] Add `terminology` field to patterns: "UK terms" / "US terms" / "Universal"
-- [ ] Show terminology badge on pattern cards and detail pages
-- [ ] Built-in conversion reference (US sc = UK dc, etc.)
+- [x] Add `terminology` field to patterns: "UK terms" / "US terms" / "Universal"
+- [x] Show terminology badge on pattern cards and detail pages
+- [x] Built-in conversion reference (US sc = UK dc, etc.)
 - [ ] Auto-translate button on written patterns (swap terms)
 - [ ] Marketplace filter by terminology
 - [ ] User preference: "I use UK/US terms" — highlight when viewing opposite
@@ -53,148 +53,150 @@ Everything we want to build next. Organised by priority and effort.
 
 ---
 
-## 📐 Gauge Calculator
+## 📐 Gauge Calculator ✅
 
 **Goal:** Help users calculate stitches/rows per inch and compare with pattern requirements.
 
 ### Features:
-- [ ] Enter: hook/needle size, yarn weight, measured stitches in 4 inches
-- [ ] Calculate: stitches per inch, rows per inch
-- [ ] Compare with pattern gauge requirements
-- [ ] Suggest hook/needle size adjustment if gauge doesn't match
-- [ ] Save gauge swatches per yarn + hook combination
+- [x] Enter: hook/needle size, yarn weight, measured stitches in 4 inches
+- [x] Calculate: stitches per inch, rows per inch
+- [x] Compare with pattern gauge requirements
+- [x] Suggest hook/needle size adjustment if gauge doesn't match
+- [ ] Save gauge swatches per yarn + hook combination (DB table ready)
 - [ ] Link gauge to projects
 
-### Effort: Small (1 session)
+### Effort: ~~Small (1 session)~~ Done
 
 ---
 
-## 🔄 Yarn Weight/Length Converter
+## 🔄 Yarn Weight/Length Converter ✅
 
 **Goal:** Convert between measurement systems for yarn.
 
 ### Features:
-- [ ] Grams ↔ Ounces
-- [ ] Metres ↔ Yards
+- [x] Grams ↔ Ounces
+- [x] Metres ↔ Yards
+- [x] "How many balls do I need?" calculator (pattern requires X metres, balls have Y metres each)
 - [ ] Calculate metres per gram (from ball band info)
-- [ ] "How many balls do I need?" calculator (pattern requires X metres, balls have Y metres each)
 - [ ] Yarn substitution helper (same weight category, similar meterage)
 
-### Effort: Small (1 session)
+### Effort: ~~Small (1 session)~~ Done
 
 ---
 
-## 📋 Project Templates
+## 📋 Project Templates ✅
 
 **Goal:** Save a project setup to reuse for repeat makes.
 
 ### Features:
-- [ ] "Save as Template" button on completed projects
-- [ ] Template stores: pattern link, counters (names + targets), hooks used, yarn used
-- [ ] "New Project from Template" option
+- [x] "Save as Template" button on completed projects
+- [x] Template stores: pattern link, counters (names + targets), hooks used, yarn used
+- [ ] "New Project from Template" option (UI button pending)
 - [ ] Auto-creates counters and links pattern/hooks/yarn
 - [ ] Template library in My Library section
 
-### Effort: Small-Medium (1-2 sessions)
+### Effort: ~~Small-Medium (1-2 sessions)~~ Done (actions + DB complete, UI integration pending)
 
 ---
 
-## 📖 Stitch Dictionary
+## 📖 Stitch Dictionary ✅
 
 **Goal:** Built-in reference for common stitches with US/UK terms, descriptions, and tips.
 
 ### Features:
-- [ ] Searchable stitch database
-- [ ] Each stitch: name (US + UK), abbreviation, description, difficulty
-- [ ] Category: basic, intermediate, advanced, decorative
-- [ ] Works for both crochet and knitting
+- [x] Searchable stitch database
+- [x] Each stitch: name (US + UK), abbreviation, description, difficulty
+- [x] Category: basic, intermediate, advanced, decorative
+- [x] Works for both crochet and knitting
+- [x] 18 stitches pre-seeded (crochet + knitting basics)
 - [ ] Link stitches to patterns (what stitches does this pattern use?)
 - [ ] User can add custom stitches/notes
 
-### Effort: Medium (1-2 sessions for structure, ongoing for content)
+### Effort: ~~Medium (1-2 sessions)~~ Done
 
 ---
 
-## 📸 Project Sharing & Inspiration Gallery
+## 📸 Project Sharing & Inspiration Gallery ✅
 
 **Goal:** Share finished projects with the community and get inspiration.
 
 ### Features:
 
 #### Sharing to socials:
-- [ ] "Share" button on completed projects
+- [x] "Share" button on completed projects (shareProject action)
 - [ ] Generate shareable image (project photo + stats overlay)
 - [ ] Share to Instagram, Facebook, Pinterest, X
 - [ ] Copy link to clipboard
 - [ ] Open Graph meta tags for link previews
 
 #### In-app inspiration gallery:
-- [ ] `/inspiration` page — community gallery of finished projects
-- [ ] Users opt-in to share (not automatic)
-- [ ] Shows: photo, project name, pattern link, time taken, yarn used
-- [ ] Click through to pattern on marketplace (if published)
-- [ ] Like/save for later
-- [ ] Filter by: craft type, category, difficulty, yarn weight
+- [x] `/inspiration` page — community gallery of finished projects
+- [x] Users opt-in to share (not automatic)
+- [x] Shows: photo, project name, pattern link, time taken
+- [x] Click through to pattern (if published)
+- [x] Like/save for later
+- [x] Filter by: craft type
 - [ ] "I made this too" — link your own project to the same pattern
+- [ ] Filter by category, difficulty, yarn weight
 
 #### Database:
-- [ ] `shared_projects` table (project_id, user_id, photo_path, caption, is_public)
-- [ ] `inspiration_likes` table (shared_project_id, user_id)
+- [x] `shared_projects` table (project_id, user_id, photo_path, caption, is_public)
+- [x] `inspiration_likes` table (shared_project_id, user_id)
 
-### Effort: Medium (2-3 sessions)
+### Effort: ~~Medium (2-3 sessions)~~ Done (core complete, social sharing pending)
 
 ---
 
-## 💾 Backup & Data Export
+## 💾 Backup & Data Export ✅
 
 **Goal:** Users can download all their data.
 
 ### Features:
-- [ ] "Export My Data" button in Settings
-- [ ] ZIP file containing:
-  - All projects (JSON)
-  - All patterns (JSON + files)
-  - All yarn/hook inventory (JSON)
-  - All time sessions (CSV)
-  - All expenses/invoices (CSV)
-  - All photos (original files)
-- [ ] GDPR compliance (right to data portability)
+- [x] "Export My Data" endpoint (`/api/backup`)
+- [x] JSON file containing all user data (projects, patterns, time sessions, counters, yarn, hooks, notes, expenses, invoices, customers, settings)
+- [x] Export logged for audit
+- [x] GDPR compliance (right to data portability)
+- [ ] ZIP file with photos/files included
 - [ ] Import from backup (restore)
 
-### Effort: Medium (2 sessions)
+### Effort: ~~Medium (2 sessions)~~ Done (JSON export complete, ZIP + import pending)
 
 ---
 
-## 🔔 Notifications & Reminders
+## 🔔 Notifications & Reminders ✅
 
 **Goal:** Helpful reminders without being annoying.
 
 ### Features:
+- [x] Notification system (user_notifications table + CRUD actions)
+- [x] UC reporting period due (UCReminders component)
+- [x] Project deadline approaching (DeadlineNotifications component)
 - [ ] Timer still running reminder (if app closed with timer active)
-- [ ] Project deadline approaching
-- [ ] UC reporting period due
 - [ ] Pattern update available (for marketplace patterns)
 - [ ] Weekly progress summary (optional)
 - [ ] Push notifications (requires service worker)
 - [ ] Email digest (optional, weekly)
 - [ ] In-app notification bell
 
-### Effort: Medium (2 sessions)
+### Effort: ~~Medium (2 sessions)~~ Done (core system complete, push/email pending)
 
 ---
 
-## ❤️ Favourites & Wishlist
+## ❤️ Favourites & Wishlist ✅
 
 **Goal:** Save patterns you want to make later.
 
 ### Features:
-- [ ] Heart/bookmark button on marketplace patterns
-- [ ] "Wishlist" section in My Library
+- [x] Heart/bookmark button on marketplace patterns (FavouriteButton component)
+- [x] `pattern_favourites` table
+- [x] Toggle favourite on/off with one tap
+- [x] Server actions: toggleFavourite, getFavourites, getFavouritePatterns
+- [ ] "Wishlist" section in My Library (filter)
 - [ ] "Start Project from Wishlist" — creates project linked to pattern
 - [ ] Price drop notifications for paid patterns (future)
 - [ ] Share wishlist with friends
 
-### Effort: Small (1 session)
+### Effort: ~~Small (1 session)~~ Done (core complete, UI integration pending)
 
 ---
 
@@ -273,18 +275,18 @@ Everything we want to build next. Organised by priority and effort.
 ## 📊 Priority Order (Suggested)
 
 ### Quick wins (1 session each):
-1. US/UK terminology field on patterns
-2. Gauge calculator
-3. Yarn converter
-4. Favourites/wishlist
+1. ~~US/UK terminology field on patterns~~ ✅
+2. ~~Gauge calculator~~ ✅
+3. ~~Yarn converter~~ ✅
+4. ~~Favourites/wishlist~~ ✅
 
 ### Medium effort (2-3 sessions each):
-5. Knitting support (tools rename + needle types)
-6. Project templates
-7. Stitch dictionary
-8. Sharing & inspiration gallery
-9. Notifications
-10. Backup/export
+5. ~~Knitting support (tools rename + needle types)~~ ✅
+6. ~~Project templates~~ ✅
+7. ~~Stitch dictionary~~ ✅
+8. ~~Sharing & inspiration gallery~~ ✅
+9. ~~Notifications~~ ✅
+10. ~~Backup/export~~ ✅
 
 ### Larger features (ongoing):
 11. USA tax (Schedule C)

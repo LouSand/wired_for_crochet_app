@@ -43,7 +43,7 @@ export default async function MarketplacePage({
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href="/marketplace/library"
+                href="/patterns"
                 className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 My Library

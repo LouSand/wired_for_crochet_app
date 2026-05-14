@@ -62,7 +62,7 @@ export default function PatternDetailActions({
         {acquired ? (
           <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-center">
             <p className="text-sm font-medium text-green-700">✓ Added to your library!</p>
-            <Link href="/marketplace/library" className="mt-1 text-xs text-green-600 hover:underline">
+            <Link href="/patterns" className="mt-1 text-xs text-green-600 hover:underline">
               View library →
             </Link>
           </div>

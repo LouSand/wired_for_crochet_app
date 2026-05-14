@@ -12,10 +12,10 @@ interface SidebarProps {
 
 const navLinks = [
   { href: '/projects', label: 'Projects', icon: 'projects' },
+  { href: '/patterns', label: 'My Library', icon: 'patterns' },
+  { href: '/marketplace', label: 'Marketplace', icon: 'marketplace' },
   { href: '/yarn', label: 'Yarn', icon: 'yarn' },
   { href: '/hooks', label: 'Hooks', icon: 'hooks' },
-  { href: '/patterns', label: 'Patterns', icon: 'patterns' },
-  { href: '/marketplace', label: 'Marketplace', icon: 'marketplace' },
   { href: '/business', label: 'Business', icon: 'business' },
   { href: '/settings', label: 'Settings', icon: 'settings' },
 ]
@@ -23,7 +23,7 @@ const navLinks = [
 // Bottom nav shows the most-used items for mobile crocheting
 const bottomNavLinks = [
   { href: '/projects', label: 'Projects', icon: 'projects' },
-  { href: '/patterns', label: 'Patterns', icon: 'patterns' },
+  { href: '/patterns', label: 'Library', icon: 'patterns' },
   { href: '/marketplace', label: 'Shop', icon: 'marketplace' },
   { href: '/yarn', label: 'Yarn', icon: 'yarn' },
   { href: '/settings', label: 'More', icon: 'settings' },

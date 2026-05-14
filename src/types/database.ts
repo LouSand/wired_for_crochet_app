@@ -272,6 +272,7 @@ export interface Database {
           quantity_owned: number;
           cost_per_unit: number | null;
           photo_path: string | null;
+          label_photo_path: string | null;
           created_at: string;
           updated_at: string;
         };

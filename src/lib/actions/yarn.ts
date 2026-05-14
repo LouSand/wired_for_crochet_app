@@ -218,6 +218,24 @@ export async function updateYarnEntry(
   if (validated.quantity_owned !== undefined) updatePayload.quantity_owned = validated.quantity_owned
   if (validated.cost_per_unit !== undefined) updatePayload.cost_per_unit = validated.cost_per_unit ?? null
 
+  // Upload yarn photo if provided
+  const yarnPhoto = formData.get('yarn_photo') as File | null
+  if (yarnPhoto && yarnPhoto.size > 0) {
+    const ext = yarnPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('yarn-photos').upload(filePath, yarnPhoto)
+    if (!uploadErr) updatePayload.photo_path = filePath
+  }
+
+  // Upload label photo if provided
+  const labelPhoto = formData.get('label_photo') as File | null
+  if (labelPhoto && labelPhoto.size > 0) {
+    const ext = labelPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const filePath = `${user.id}/label-${crypto.randomUUID()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('yarn-photos').upload(filePath, labelPhoto)
+    if (!uploadErr) updatePayload.label_photo_path = filePath
+  }
+
   const { error } = await supabase
     .from('yarn_entries')
     .update(updatePayload)

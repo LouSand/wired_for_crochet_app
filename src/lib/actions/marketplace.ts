@@ -262,7 +262,10 @@ export async function publishPattern(
     .eq('id', patternId)
     .eq('user_id', user.id)
 
-  if (error) return { error: 'Failed to publish pattern.' }
+  if (error) {
+    console.error('Publish error:', error)
+    return { error: `Failed to publish: ${error.message}` }
+  }
 
   revalidatePath('/marketplace')
   revalidatePath(`/patterns/${patternId}`)

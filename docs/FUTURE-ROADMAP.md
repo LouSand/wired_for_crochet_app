@@ -62,8 +62,8 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Calculate: stitches per inch, rows per inch
 - [x] Compare with pattern gauge requirements
 - [x] Suggest hook/needle size adjustment if gauge doesn't match
-- [ ] Save gauge swatches per yarn + hook combination (DB table ready)
-- [ ] Link gauge to projects
+- [x] Save gauge swatches per yarn + hook combination
+- [x] Link gauge to projects (gauge_swatch_id on projects table)
 
 ### Effort: ~~Small (1 session)~~ Done
 

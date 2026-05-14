@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getGaugeSwatches, saveGaugeSwatch, deleteGaugeSwatch, type GaugeSwatch } from '@/lib/actions/gauge'
 
 // ─── Terminology Conversion ──────────────────────────────────────────────────
 
@@ -225,8 +226,127 @@ export default function ToolsPage() {
       {/* Gauge Calculator */}
       <GaugeCalculator />
 
+      {/* Saved Gauge Swatches */}
+      <SavedSwatches />
+
       {/* Yarn Converter */}
       <YarnConverter />
+    </div>
+  )
+}
+
+// ─── Saved Gauge Swatches ────────────────────────────────────────────────────
+
+function SavedSwatches() {
+  const [swatches, setSwatches] = useState<GaugeSwatch[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await getGaugeSwatches()
+      setSwatches(data)
+      setLoaded(true)
+    }
+    load()
+  }, [])
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setSaving(true)
+    const formData = new FormData(e.currentTarget)
+    await saveGaugeSwatch(formData)
+    const { data } = await getGaugeSwatches()
+    setSwatches(data)
+    setSaving(false)
+    setShowForm(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    await deleteGaugeSwatch(id)
+    setSwatches((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  if (!loaded) return null
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">Saved Gauge Swatches</h3>
+          <p className="text-xs text-gray-500">Your gauge records for different yarn + hook combinations.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm(!showForm)}
+          className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 min-h-[32px]"
+        >
+          {showForm ? 'Cancel' : '+ Save Swatch'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSave} className="mb-4 rounded-lg border border-purple-200 bg-purple-50 p-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Hook/Needle Size *</label>
+            <input type="text" name="hook_size" required placeholder="e.g. 4.0mm" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Stitches per 4&quot; *</label>
+            <input type="number" name="stitches_per_4in" required step="0.5" placeholder="e.g. 14" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Rows per 4&quot;</label>
+            <input type="number" name="rows_per_4in" step="0.5" placeholder="e.g. 18" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Yarn Weight</label>
+            <input type="text" name="yarn_weight" placeholder="e.g. DK, Aran" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Yarn Name</label>
+            <input type="text" name="yarn_name" placeholder="e.g. Stylecraft Special DK" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Notes</label>
+            <input type="text" name="notes" placeholder="Optional notes" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={saving} className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+              {saving ? 'Saving...' : 'Save Swatch'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {swatches.length === 0 ? (
+        <p className="text-sm text-gray-500">No saved swatches yet. Save your gauge measurements for future reference.</p>
+      ) : (
+        <div className="space-y-2">
+          {swatches.map((swatch) => (
+            <div key={swatch.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {swatch.hook_size} — {swatch.stitches_per_4in} sts/4&quot;
+                  {swatch.rows_per_4in && `, ${swatch.rows_per_4in} rows/4"`}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {[swatch.yarn_name, swatch.yarn_weight].filter(Boolean).join(' • ') || 'No yarn specified'}
+                  {swatch.notes && ` — ${swatch.notes}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(swatch.id)}
+                className="text-xs text-red-500 hover:text-red-700"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

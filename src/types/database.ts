@@ -62,6 +62,9 @@ export interface Database {
           tags: string[];
           view_count: number;
           purchase_count: number;
+          average_completion_seconds: number | null;
+          completion_count: number;
+          terminology: 'uk' | 'us' | 'universal';
           created_at: string;
           updated_at: string;
         };
@@ -89,6 +92,9 @@ export interface Database {
           tags?: string[];
           view_count?: number;
           purchase_count?: number;
+          average_completion_seconds?: number | null;
+          completion_count?: number;
+          terminology?: 'uk' | 'us' | 'universal';
           created_at?: string;
           updated_at?: string;
         };
@@ -116,6 +122,9 @@ export interface Database {
           tags?: string[];
           view_count?: number;
           purchase_count?: number;
+          average_completion_seconds?: number | null;
+          completion_count?: number;
+          terminology?: 'uk' | 'us' | 'universal';
           created_at?: string;
           updated_at?: string;
         };

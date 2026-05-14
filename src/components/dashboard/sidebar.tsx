@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/projects', label: 'Projects', icon: 'projects' },
   { href: '/patterns', label: 'My Library', icon: 'patterns' },
   { href: '/marketplace', label: 'Marketplace', icon: 'marketplace' },
+  { href: '/tools', label: 'Tools', icon: 'hooks' },
   { href: '/yarn', label: 'Yarn', icon: 'yarn' },
   { href: '/hooks', label: 'Hooks', icon: 'hooks' },
   { href: '/business', label: 'Business', icon: 'business' },

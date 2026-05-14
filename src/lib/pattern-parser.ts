@@ -24,6 +24,7 @@ export interface PatternAnalysis {
   totalRows: number
   sections: string[]
   suggestedCounters: SuggestedCounter[]
+  stitchCountsPerRow: Array<{ row: number; stitches: number }>
   difficulty: 'beginner' | 'easy' | 'intermediate' | 'advanced' | 'expert' | null
 }
 
@@ -77,6 +78,31 @@ export function parsePattern(instructions: string): PatternAnalysis {
     })
   }
 
+  // Detect stitch counts per row and suggest stitch counters
+  const rowsWithStitchCounts = rows.filter((r) => r.stitchCount !== null && r.stitchCount > 0)
+  if (rowsWithStitchCounts.length > 0) {
+    // Find the most common stitch count (likely the main body stitch count)
+    const stitchCounts = rowsWithStitchCounts.map((r) => r.stitchCount!)
+    const maxStitchCount = Math.max(...stitchCounts)
+    const firstRowStitchCount = rowsWithStitchCounts[0].stitchCount!
+
+    suggestedCounters.push({
+      name: 'Stitch Counter',
+      targetValue: firstRowStitchCount,
+      reason: `First row has ${firstRowStitchCount} stitches — target updates per row`,
+    })
+
+    // If stitch counts vary, suggest per-row stitch tracking
+    const uniqueCounts = new Set(stitchCounts)
+    if (uniqueCounts.size > 1) {
+      suggestedCounters.push({
+        name: 'Stitch Counter (varies)',
+        targetValue: maxStitchCount,
+        reason: `Stitch count varies between rows (${Math.min(...stitchCounts)}–${maxStitchCount}). Target shows max.`,
+      })
+    }
+  }
+
   // Add section-based counters
   for (const section of sections) {
     const sectionRows = rows.filter(
@@ -109,11 +135,17 @@ export function parsePattern(instructions: string): PatternAnalysis {
   // Estimate difficulty
   const difficulty = estimateDifficulty(instructions)
 
+  // Build stitch counts per row
+  const stitchCountsPerRow = rows
+    .filter((r) => (r.rowNumber || r.roundNumber) && r.stitchCount)
+    .map((r) => ({ row: r.rowNumber || r.roundNumber!, stitches: r.stitchCount! }))
+
   return {
     rows,
     totalRows: maxRowNumber,
     sections,
     suggestedCounters,
+    stitchCountsPerRow,
     difficulty,
   }
 }

@@ -483,6 +483,12 @@ function TimerCard({
 // ─── Counters Card (large tap targets for crocheting) ────────────────────────
 
 function CountersCard({ projectId, counters }: { projectId: string; counters: Counter[] }) {
+  // Detect paired counters (Row + Stitch) for compact side-by-side display
+  const rowCounter = counters.find((c) => c.name.toLowerCase().includes('row'))
+  const stitchCounter = counters.find((c) => c.name.toLowerCase().includes('stitch'))
+  const hasPair = rowCounter && stitchCounter
+  const otherCounters = counters.filter((c) => c.id !== rowCounter?.id && c.id !== stitchCounter?.id)
+
   return (
     <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -509,11 +515,103 @@ function CountersCard({ projectId, counters }: { projectId: string; counters: Co
         </div>
       ) : (
         <div className="space-y-3">
-          {counters.map((counter) => (
-            <CounterRow key={counter.id} counter={counter} />
-          ))}
+          {/* Paired Row + Stitch counters side by side */}
+          {hasPair && (
+            <div className="grid grid-cols-2 gap-2">
+              <CompactCounterRow counter={rowCounter} />
+              <CompactCounterRow counter={stitchCounter} />
+            </div>
+          )}
+          {/* Non-paired counters or all counters if no pair detected */}
+          {hasPair ? (
+            otherCounters.map((counter) => (
+              <CounterRow key={counter.id} counter={counter} />
+            ))
+          ) : (
+            counters.map((counter) => (
+              <CounterRow key={counter.id} counter={counter} />
+            ))
+          )}
         </div>
       )}
+    </div>
+  )
+}
+
+function CompactCounterRow({ counter }: { counter: Counter }) {
+  const [value, setValue] = useState(counter.current_value)
+  const [loading, setLoading] = useState(false)
+  const [showTargetReached, setShowTargetReached] = useState(false)
+  const [targetAcknowledged, setTargetAcknowledged] = useState(false)
+
+  const handleIncrement = async () => {
+    if (counter.target_value && value >= counter.target_value && !targetAcknowledged) {
+      setShowTargetReached(true)
+      return
+    }
+    setLoading(true)
+    const { data } = await incrementCounter(counter.id)
+    if (data) {
+      setValue(data.current_value)
+      if (counter.target_value && data.current_value >= counter.target_value && !targetAcknowledged) {
+        setShowTargetReached(true)
+      }
+    }
+    setLoading(false)
+  }
+
+  const handleDecrement = async () => {
+    if (value <= 0) return
+    setLoading(true)
+    const { data } = await decrementCounter(counter.id)
+    if (data) setValue(data.current_value)
+    setLoading(false)
+  }
+
+  const progress = counter.target_value ? Math.min(100, (value / counter.target_value) * 100) : null
+
+  return (
+    <div className="rounded-lg bg-gray-50 p-2.5">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[10px] font-semibold text-gray-700 truncate">{counter.name}</p>
+        {counter.target_value && (
+          <span className="text-[9px] text-gray-400">{value}/{counter.target_value}</span>
+        )}
+      </div>
+      {counter.target_value && (
+        <div className="mb-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+          <div className="h-full rounded-full bg-purple-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+      {showTargetReached && !targetAcknowledged && (
+        <div className="mb-2 text-center">
+          <p className="text-[9px] text-green-700 font-medium">🎉 Target!</p>
+          <button type="button" onClick={() => { setTargetAcknowledged(true); setShowTargetReached(false) }} className="text-[9px] text-purple-600 underline">Continue</button>
+        </div>
+      )}
+      <div className="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={loading || value <= 0}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-white text-sm font-bold text-gray-600 active:bg-gray-200 active:scale-95 disabled:opacity-30 transition-all"
+          aria-label={`Decrease ${counter.name}`}
+        >
+          −
+        </button>
+        <span className="min-w-[2rem] text-center text-lg font-bold text-gray-900 tabular-nums">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={loading}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-purple-400 bg-purple-50 text-sm font-bold text-purple-700 active:bg-purple-200 active:scale-95 disabled:opacity-30 transition-all"
+          aria-label={`Increase ${counter.name}`}
+        >
+          +
+        </button>
+      </div>
     </div>
   )
 }

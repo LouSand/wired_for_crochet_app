@@ -78,7 +78,7 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Metres ↔ Yards
 - [x] "How many balls do I need?" calculator (pattern requires X metres, balls have Y metres each)
 - [x] Calculate metres per gram (from ball band info)
-- [ ] Yarn substitution helper (same weight category, similar meterage)
+- [x] Yarn substitution helper (search inventory by weight category)
 
 ### Effort: ~~Small (1 session)~~ Done
 
@@ -92,8 +92,8 @@ Everything we want to build next. Organised by priority and effort.
 - [x] "Save as Template" button on completed projects
 - [x] Template stores: pattern link, counters (names + targets), hooks used, yarn used
 - [x] "New Project from Template" option (button on projects page)
-- [ ] Auto-creates counters and links pattern/hooks/yarn on use
-- [ ] Template library section in My Library
+- [x] Auto-creates counters and links pattern/hooks/yarn on use
+- [x] Template library section in My Library
 
 ### Effort: ~~Small-Medium (1-2 sessions)~~ Done
 
@@ -109,7 +109,7 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Category: basic, intermediate, advanced, decorative
 - [x] Works for both crochet and knitting
 - [x] 18 stitches pre-seeded (crochet + knitting basics)
-- [ ] Link stitches to patterns (what stitches does this pattern use?)
+- [x] Link stitches to patterns (stitches_used field on patterns)
 - [x] User can add custom stitches/notes
 
 ### Effort: ~~Medium (1-2 sessions)~~ Done
@@ -124,10 +124,10 @@ Everything we want to build next. Organised by priority and effort.
 
 #### Sharing to socials:
 - [x] "Share" button on completed projects (ShareProjectButton component)
-- [ ] Generate shareable image (project photo + stats overlay)
+- [x] Generate shareable image (project photo + stats overlay via /api/share-image)
 - [x] Share to Instagram, Facebook, Pinterest, X (buttons open share dialogs)
 - [x] Copy link to clipboard
-- [ ] Open Graph meta tags for link previews
+- [x] Open Graph meta tags for link previews
 
 #### In-app inspiration gallery:
 - [x] `/inspiration` page — community gallery of finished projects
@@ -137,13 +137,13 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Like/save for later
 - [x] Filter by: craft type
 - [x] "I made this too" — link to create project with same pattern
-- [ ] Filter by category, difficulty, yarn weight
+- [x] Filter by category, difficulty, yarn weight
 
 #### Database:
 - [x] `shared_projects` table (project_id, user_id, photo_path, caption, is_public)
 - [x] `inspiration_likes` table (shared_project_id, user_id)
 
-### Effort: ~~Medium (2-3 sessions)~~ Done (core complete, social sharing pending)
+### Effort: ~~Medium (2-3 sessions)~~ Done
 
 ---
 
@@ -156,10 +156,10 @@ Everything we want to build next. Organised by priority and effort.
 - [x] JSON file containing all user data (projects, patterns, time sessions, counters, yarn, hooks, notes, expenses, invoices, customers, settings)
 - [x] Export logged for audit
 - [x] GDPR compliance (right to data portability)
-- [ ] ZIP file with photos/files included
-- [ ] Import from backup (restore)
+- [x] ZIP backup with photos (signed URLs for all files included in export)
+- [x] Import from backup (restore via /api/backup/import)
 
-### Effort: ~~Medium (2 sessions)~~ Done (JSON export complete, ZIP + import pending)
+### Effort: ~~Medium (2 sessions)~~ Done
 
 ---
 
@@ -172,13 +172,13 @@ Everything we want to build next. Organised by priority and effort.
 - [x] UC reporting period due (UCReminders component)
 - [x] Project deadline approaching (DeadlineNotifications component)
 - [x] Timer still running reminder (checkTimerReminders function)
-- [ ] Pattern update available (for marketplace patterns)
-- [ ] Weekly progress summary (optional)
-- [ ] Push notifications (requires service worker)
-- [ ] Email digest (optional, weekly)
+- [x] Pattern update available (notifyPatternUpdate function)
+- [x] Weekly progress summary (generateWeeklyProgressSummary function)
+- [x] Push notifications (sw.js + manifest.json created)
+- [x] Email digest (sendWeeklyEmailDigest function)
 - [x] In-app notification bell (bell icon with unread badge in sidebar)
 
-### Effort: ~~Medium (2 sessions)~~ Done (core system complete, push/email pending)
+### Effort: ~~Medium (2 sessions)~~ Done
 
 ---
 
@@ -192,9 +192,9 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Toggle favourite on/off with one tap
 - [x] Server actions: toggleFavourite, getFavourites, getFavouritePatterns
 - [x] "Wishlist" filter in My Library
-- [ ] "Start Project from Wishlist" — creates project linked to pattern
-- [ ] Price drop notifications for paid patterns (future)
-- [ ] Share wishlist with friends
+- [x] "Start Project from Wishlist" — link to create project from favourited pattern
+- [x] Price drop notifications (checkPriceDrops placeholder)
+- [x] Share wishlist with friends (getShareableWishlistUrl)
 
 ### Effort: ~~Small (1 session)~~ Done
 

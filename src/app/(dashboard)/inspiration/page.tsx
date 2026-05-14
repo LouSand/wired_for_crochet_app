@@ -90,11 +90,18 @@ export default function InspirationPage() {
                   >
                     ❤️ {project.likes_count}
                   </button>
-                  {project.pattern_id && (
-                    <Link href={`/patterns/${project.pattern_id}`} className="text-xs text-purple-600 hover:text-purple-700">
-                      View pattern →
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {project.pattern_id && (
+                      <Link href={`/projects/new?pattern_id=${project.pattern_id}`} className="text-xs text-green-600 hover:text-green-700">
+                        I made this too
+                      </Link>
+                    )}
+                    {project.pattern_id && (
+                      <Link href={`/patterns/${project.pattern_id}`} className="text-xs text-purple-600 hover:text-purple-700">
+                        View pattern →
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

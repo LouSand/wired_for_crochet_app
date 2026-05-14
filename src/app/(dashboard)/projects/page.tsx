@@ -5,6 +5,7 @@ import FilterBar from '@/components/ui/FilterBar'
 import ProjectCard from '@/components/projects/ProjectCard'
 import EmptyState from '@/components/ui/EmptyState'
 import DeadlineNotifications from '@/components/projects/DeadlineNotifications'
+import NewFromTemplateButton from '@/components/projects/NewFromTemplateButton'
 
 export default async function ProjectsPage({
   searchParams,
@@ -34,21 +35,24 @@ export default async function ProjectsPage({
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-        <Link
-          href="/projects/new"
-          className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-        >
-          <svg
-            className="mr-2 h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+        <div className="flex items-center gap-2">
+          <NewFromTemplateButton />
+          <Link
+            href="/projects/new"
+            className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Project
-        </Link>
+            <svg
+              className="mr-2 h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Project
+          </Link>
+        </div>
       </div>
 
       {/* Deadline notifications */}

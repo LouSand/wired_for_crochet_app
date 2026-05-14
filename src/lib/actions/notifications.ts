@@ -79,3 +79,47 @@ export async function createNotification(
     link: link ?? null,
   })
 }
+
+export async function checkTimerReminders(): Promise<{ checked: number; created: number }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { checked: 0, created: 0 }
+
+  // Find time_sessions with null end_time older than 2 hours
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+
+  const { data: runningSessions, error } = await supabase
+    .from('time_sessions')
+    .select('id, project_id, start_time')
+    .eq('user_id', user.id)
+    .is('end_time', null)
+    .lt('start_time', twoHoursAgo)
+
+  if (error || !runningSessions) return { checked: 0, created: 0 }
+
+  let created = 0
+  for (const session of runningSessions) {
+    // Check if we already sent a reminder for this session
+    const { data: existing } = await supabase
+      .from('user_notifications')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'timer_reminder')
+      .eq('link', `/projects/${session.project_id}`)
+      .gte('created_at', twoHoursAgo)
+      .limit(1)
+
+    if (!existing || existing.length === 0) {
+      await supabase.from('user_notifications').insert({
+        user_id: user.id,
+        type: 'timer_reminder',
+        title: 'Timer still running',
+        message: `You have a timer running for over 2 hours. Did you forget to stop it?`,
+        link: `/projects/${session.project_id}`,
+      })
+      created++
+    }
+  }
+
+  return { checked: runningSessions.length, created }
+}

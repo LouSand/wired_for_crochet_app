@@ -12,6 +12,7 @@ export interface UserSettingsData {
   default_hourly_rate: number | null
   default_currency: string
   default_profit_margin: number | null
+  preferred_terminology: string
 }
 
 /**
@@ -25,23 +26,24 @@ export async function getSettings(): Promise<UserSettingsData> {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null }
+    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null, preferred_terminology: 'uk' }
   }
 
   const { data } = await supabase
     .from('user_settings')
-    .select('default_hourly_rate, default_currency, default_profit_margin')
+    .select('default_hourly_rate, default_currency, default_profit_margin, preferred_terminology')
     .eq('user_id', user.id)
     .single()
 
   if (!data) {
-    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null }
+    return { default_hourly_rate: null, default_currency: 'GBP', default_profit_margin: null, preferred_terminology: 'uk' }
   }
 
   return {
     default_hourly_rate: data.default_hourly_rate,
     default_currency: data.default_currency ?? 'GBP',
     default_profit_margin: data.default_profit_margin ?? null,
+    preferred_terminology: data.preferred_terminology ?? 'uk',
   }
 }
 
@@ -65,10 +67,12 @@ export async function updateSettings(
   const rateValue = formData.get('default_hourly_rate') as string
   const currencyValue = formData.get('default_currency') as string
   const profitMarginValue = formData.get('default_profit_margin') as string
+  const terminologyValue = formData.get('preferred_terminology') as string
 
   const rate = rateValue && rateValue.trim() !== '' ? parseFloat(rateValue) : null
   const currency = currencyValue && currencyValue.trim() !== '' ? currencyValue.trim() : 'GBP'
   const profitMargin = profitMarginValue && profitMarginValue.trim() !== '' ? parseFloat(profitMarginValue) : null
+  const terminology = terminologyValue && terminologyValue.trim() !== '' ? terminologyValue.trim() : 'uk'
 
   if (rate !== null && (isNaN(rate) || rate < 0)) {
     return { error: 'Hourly rate must be a valid non-negative number.' }
@@ -93,6 +97,7 @@ export async function updateSettings(
         default_hourly_rate: rate,
         default_currency: currency,
         default_profit_margin: profitMargin,
+        preferred_terminology: terminology,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.id)
@@ -107,6 +112,7 @@ export async function updateSettings(
       default_hourly_rate: rate,
       default_currency: currency,
       default_profit_margin: profitMargin,
+      preferred_terminology: terminology,
     })
 
     if (error) {

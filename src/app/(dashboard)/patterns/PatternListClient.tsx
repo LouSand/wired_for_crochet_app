@@ -7,6 +7,7 @@ import type { Pattern } from '@/types/database'
 interface PatternListClientProps {
   patterns: Pattern[]
   libraryPatterns?: Array<{ pattern_id: string; title: string; type: string }>
+  favourites?: string[]
 }
 
 const PATTERN_CATEGORIES = [
@@ -26,11 +27,11 @@ const PATTERN_CATEGORIES = [
   'Other',
 ]
 
-export default function PatternListClient({ patterns, libraryPatterns = [] }: PatternListClientProps) {
+export default function PatternListClient({ patterns, libraryPatterns = [], favourites = [] }: PatternListClientProps) {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'library'>('all')
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'library' | 'wishlist'>('all')
 
   // Extract unique categories from patterns
   const categories = useMemo(() => {
@@ -76,7 +77,9 @@ export default function PatternListClient({ patterns, libraryPatterns = [] }: Pa
         if (!matchesTitle && !matchesHook && !matchesIntro && !matchesCategory) return false
       }
       // Source filter
-      if (sourceFilter !== 'all' && p.source !== sourceFilter) return false
+      if (sourceFilter === 'wishlist') {
+        if (!favourites.includes(p.id)) return false
+      } else if (sourceFilter !== 'all' && p.source !== sourceFilter) return false
       // Type filter
       if (typeFilter !== 'all' && p.type !== typeFilter) return false
       // Category filter
@@ -110,17 +113,16 @@ export default function PatternListClient({ patterns, libraryPatterns = [] }: Pa
         </div>
 
         {/* Source filter */}
-        {libraryPatterns.length > 0 && (
-          <select
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value as 'all' | 'mine' | 'library')}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-          >
-            <option value="all">All patterns</option>
-            <option value="mine">My patterns</option>
-            <option value="library">From marketplace</option>
-          </select>
-        )}
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value as 'all' | 'mine' | 'library' | 'wishlist')}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        >
+          <option value="all">All patterns</option>
+          <option value="mine">My patterns</option>
+          {libraryPatterns.length > 0 && <option value="library">From marketplace</option>}
+          <option value="wishlist">Wishlist</option>
+        </select>
 
         {/* Type filter */}
         <select

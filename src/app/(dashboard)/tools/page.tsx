@@ -108,11 +108,16 @@ function YarnConverter() {
   const [metres, setMetres] = useState('')
   const [ballMetres, setBallMetres] = useState('')
   const [neededMetres, setNeededMetres] = useState('')
+  const [gramsPerBall, setGramsPerBall] = useState('')
+  const [metresPerBall, setMetresPerBall] = useState('')
 
   const ounces = grams ? (parseFloat(grams) * 0.035274).toFixed(1) : ''
   const yards = metres ? (parseFloat(metres) * 1.09361).toFixed(1) : ''
   const metresFromYards = yards && !metres ? (parseFloat(yards) / 1.09361).toFixed(1) : ''
   const ballsNeeded = ballMetres && neededMetres ? Math.ceil(parseFloat(neededMetres) / parseFloat(ballMetres)) : null
+  const metresPerGram = gramsPerBall && metresPerBall && parseFloat(gramsPerBall) > 0
+    ? (parseFloat(metresPerBall) / parseFloat(gramsPerBall)).toFixed(2)
+    : null
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -161,6 +166,28 @@ function YarnConverter() {
             {ballsNeeded && (
               <div className="rounded-md bg-green-50 border border-green-200 px-3 py-1.5 text-sm font-bold text-green-700 w-full text-center">
                 {ballsNeeded} ball{ballsNeeded !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Metres per gram calculator */}
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <h4 className="text-xs font-medium text-gray-700 mb-2">Metres per Gram</h4>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div>
+            <label className="block text-[10px] text-gray-500">Grams per ball</label>
+            <input type="number" value={gramsPerBall} onChange={(e) => setGramsPerBall(e.target.value)} placeholder="e.g. 100" className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-[10px] text-gray-500">Metres per ball</label>
+            <input type="number" value={metresPerBall} onChange={(e) => setMetresPerBall(e.target.value)} placeholder="e.g. 200" className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+          </div>
+          <div className="flex items-end">
+            {metresPerGram && (
+              <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-1.5 text-sm font-bold text-blue-700 w-full text-center">
+                {metresPerGram} m/g
               </div>
             )}
           </div>

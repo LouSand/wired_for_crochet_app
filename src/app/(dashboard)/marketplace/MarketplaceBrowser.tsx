@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { PublishedPattern } from '@/types/marketplace'
+import FavouriteButton from '@/components/patterns/FavouriteButton'
 
 interface MarketplaceBrowserProps {
   patterns: PublishedPattern[]
@@ -22,6 +23,7 @@ export default function MarketplaceBrowser({
 }: MarketplaceBrowserProps) {
   const router = useRouter()
   const [search, setSearch] = useState(initialSearch)
+  const [terminologyFilter, setTerminologyFilter] = useState<'all' | 'uk' | 'us'>('all')
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,34 +69,50 @@ export default function MarketplaceBrowser({
           <option value="price_low">Price: Low to High</option>
           <option value="price_high">Price: High to Low</option>
         </select>
+
+        <select
+          value={terminologyFilter}
+          onChange={(e) => setTerminologyFilter(e.target.value as 'all' | 'uk' | 'us')}
+          className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        >
+          <option value="all">All Terminology</option>
+          <option value="uk">UK Terms</option>
+          <option value="us">US Terms</option>
+        </select>
       </div>
 
       {/* Results */}
       <p className="text-sm text-gray-500">{total} pattern{total !== 1 ? 's' : ''} available</p>
 
-      {patterns.length === 0 ? (
-        <div className="text-center py-16">
-          <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-          </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No patterns yet</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Be the first to share a pattern with the community!
-          </p>
-          <Link
-            href="/marketplace/seller"
-            className="mt-4 inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-          >
-            Start Selling
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {patterns.map((pattern) => (
-            <PatternCard key={pattern.id} pattern={pattern} />
-          ))}
-        </div>
-      )}
+      {(() => {
+        const filteredPatterns = terminologyFilter === 'all'
+          ? patterns
+          : patterns.filter((p) => (p as PublishedPattern & { terminology?: string }).terminology === terminologyFilter)
+
+        return filteredPatterns.length === 0 ? (
+          <div className="text-center py-16">
+            <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">No patterns found</h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Be the first to share a pattern with the community!
+            </p>
+            <Link
+              href="/marketplace/seller"
+              className="mt-4 inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+            >
+              Start Selling
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredPatterns.map((pattern) => (
+              <PatternCard key={pattern.id} pattern={pattern} />
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -103,12 +121,18 @@ function PatternCard({ pattern }: { pattern: PublishedPattern }) {
   const isFree = !pattern.price || pattern.price === 0
 
   return (
-    <Link
-      href={`/marketplace/${pattern.slug}`}
-      className="group block rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-purple-200 transition-all overflow-hidden"
-    >
-      {/* Card content */}
-      <div className="p-5">
+    <div className="group relative rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-purple-200 transition-all overflow-hidden">
+      {/* Favourite button */}
+      <div className="absolute top-3 right-3 z-10">
+        <FavouriteButton patternId={pattern.id} size="sm" />
+      </div>
+
+      <Link
+        href={`/marketplace/${pattern.slug}`}
+        className="block"
+      >
+        {/* Card content */}
+        <div className="p-5">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-semibold text-gray-900 group-hover:text-purple-700 transition-colors line-clamp-2">
             {pattern.title}
@@ -155,5 +179,6 @@ function PatternCard({ pattern }: { pattern: PublishedPattern }) {
         )}
       </div>
     </Link>
+    </div>
   )
 }

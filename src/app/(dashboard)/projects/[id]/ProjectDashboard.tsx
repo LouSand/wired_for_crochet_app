@@ -11,6 +11,8 @@ import { deleteAllAnnotations } from '@/lib/actions/pattern-annotations'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import PdfAnnotationViewer from '@/components/patterns/PdfAnnotationViewer'
 import PatternAnalysisPanel from '@/components/patterns/PatternAnalysisPanel'
+import TranslateButton from '@/components/patterns/TranslateButton'
+import ShareProjectButton from '@/components/projects/ShareProjectButton'
 
 function formatLabel(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -226,6 +228,9 @@ export default function ProjectDashboard({
             >
               Delete
             </button>
+            {project.status === 'completed' && (
+              <ShareProjectButton projectId={project.id} projectName={project.name} />
+            )}
             {project.status !== 'completed' && (
               <button
                 type="button"
@@ -866,6 +871,12 @@ function PatternViewer({
                     </div>
                   </details>
                 )}
+
+                {/* Translate Button */}
+                <TranslateButton
+                  text={pattern.instructions ?? ''}
+                  onTranslated={() => {}}
+                />
               </div>
             )}
 

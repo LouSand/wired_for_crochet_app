@@ -17,6 +17,7 @@ export default async function SettingsPage() {
           defaultHourlyRate={settings.default_hourly_rate}
           defaultCurrency={settings.default_currency}
           defaultProfitMargin={settings.default_profit_margin}
+          defaultTerminology={settings.preferred_terminology}
         />
       </div>
 

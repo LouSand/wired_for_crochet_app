@@ -9,9 +9,10 @@ interface SettingsFormProps {
   defaultHourlyRate: number | null
   defaultCurrency: string
   defaultProfitMargin: number | null
+  defaultTerminology?: string
 }
 
-export default function SettingsForm({ defaultHourlyRate, defaultCurrency, defaultProfitMargin }: SettingsFormProps) {
+export default function SettingsForm({ defaultHourlyRate, defaultCurrency, defaultProfitMargin, defaultTerminology }: SettingsFormProps) {
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
     updateSettings,
     null
@@ -88,6 +89,28 @@ export default function SettingsForm({ defaultHourlyRate, defaultCurrency, defau
           placeholder="e.g. 20"
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
         />
+      </div>
+
+      {/* Preferred Terminology */}
+      <div>
+        <label
+          htmlFor="preferred_terminology"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Preferred Terminology
+        </label>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Choose whether you prefer UK or US crochet terminology throughout the app.
+        </p>
+        <select
+          id="preferred_terminology"
+          name="preferred_terminology"
+          defaultValue={defaultTerminology ?? 'uk'}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        >
+          <option value="uk">UK Terms</option>
+          <option value="us">US Terms</option>
+        </select>
       </div>
 
       {state?.error && (

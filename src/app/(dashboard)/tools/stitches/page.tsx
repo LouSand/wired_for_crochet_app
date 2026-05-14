@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getStitches, type Stitch } from '@/lib/actions/stitch-dictionary'
+import { getStitches, addCustomStitch, type Stitch } from '@/lib/actions/stitch-dictionary'
 
 export default function StitchDictionaryPage() {
   const [stitches, setStitches] = useState<Stitch[]>([])
@@ -10,19 +10,32 @@ export default function StitchDictionaryPage() {
   const [craftFilter, setCraftFilter] = useState<'all' | 'crochet' | 'knitting'>('all')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const loadStitches = async () => {
+    const { data } = await getStitches({
+      craft_type: craftFilter === 'all' ? undefined : craftFilter,
+      category: categoryFilter || undefined,
+      search: search || undefined,
+    })
+    setStitches(data)
+    setLoading(false)
+  }
 
   useEffect(() => {
-    async function load() {
-      const { data } = await getStitches({
-        craft_type: craftFilter === 'all' ? undefined : craftFilter,
-        category: categoryFilter || undefined,
-        search: search || undefined,
-      })
-      setStitches(data)
-      setLoading(false)
-    }
-    load()
+    loadStitches()
   }, [search, craftFilter, categoryFilter])
+
+  const handleAddStitch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setSaving(true)
+    const formData = new FormData(e.currentTarget)
+    await addCustomStitch(formData)
+    await loadStitches()
+    setSaving(false)
+    setShowAddForm(false)
+  }
 
   return (
     <div className="space-y-6">
@@ -106,6 +119,68 @@ export default function StitchDictionaryPage() {
           ))}
         </div>
       )}
+
+      {/* Add Custom Stitch Form */}
+      <div className="mt-6">
+        {!showAddForm ? (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+          >
+            + Add Custom Stitch
+          </button>
+        ) : (
+          <form onSubmit={handleAddStitch} className="rounded-xl border border-purple-200 bg-purple-50 p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-purple-900">Add Custom Stitch</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-700">UK Name *</label>
+                <input type="text" name="name_uk" required placeholder="e.g. Treble" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">US Name *</label>
+                <input type="text" name="name_us" required placeholder="e.g. Double crochet" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Abbreviation</label>
+                <input type="text" name="abbreviation" placeholder="e.g. tr / dc" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Craft Type *</label>
+                <select name="craft_type" required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+                  <option value="crochet">Crochet</option>
+                  <option value="knitting">Knitting</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Category</label>
+                <select name="category" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+                  <option value="">None</option>
+                  <option value="basic">Basic</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="decorative">Decorative</option>
+                  <option value="structural">Structural</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-gray-700">Description</label>
+                <textarea name="description" rows={2} placeholder="How to work this stitch..." className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="submit" disabled={saving} className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+                {saving ? 'Saving...' : 'Add Stitch'}
+              </button>
+              <button type="button" onClick={() => setShowAddForm(false)} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

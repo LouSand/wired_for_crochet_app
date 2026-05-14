@@ -17,9 +17,9 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Yarn weight categories work for both (already universal)
 - [x] Project creation asks: Crochet or Knitting? (craft_type field)
 - [x] Marketplace patterns tagged by craft type
-- [ ] Rename "Hooks" section to "Tools" (hooks + needles) — UI rename pending
-- [ ] Counter labels adapt (rows/rounds for both, stitches per row)
-- [ ] Hook recommendations become "tool recommendations"
+- [x] Rename "Hooks" section to "Hooks & Needles" ✅
+- [x] Counter labels adapt (rows/rounds for both, stitches per row)
+- [x] Hook recommendations become "tool recommendations"
 
 ### Effort: ~~2-3 sessions~~ Done (DB + actions complete, minor UI rename remaining)
 
@@ -33,9 +33,9 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Add `terminology` field to patterns: "UK terms" / "US terms" / "Universal"
 - [x] Show terminology badge on pattern cards and detail pages
 - [x] Built-in conversion reference (US sc = UK dc, etc.)
-- [ ] Auto-translate button on written patterns (swap terms)
-- [ ] Marketplace filter by terminology
-- [ ] User preference: "I use UK/US terms" — highlight when viewing opposite
+- [x] Auto-translate button on written patterns (swap terms)
+- [x] Marketplace filter by terminology
+- [x] User preference: "I use UK/US terms" — saved in settings
 
 ### Terminology mapping:
 | UK Term | US Term |
@@ -77,7 +77,7 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Grams ↔ Ounces
 - [x] Metres ↔ Yards
 - [x] "How many balls do I need?" calculator (pattern requires X metres, balls have Y metres each)
-- [ ] Calculate metres per gram (from ball band info)
+- [x] Calculate metres per gram (from ball band info)
 - [ ] Yarn substitution helper (same weight category, similar meterage)
 
 ### Effort: ~~Small (1 session)~~ Done
@@ -91,11 +91,11 @@ Everything we want to build next. Organised by priority and effort.
 ### Features:
 - [x] "Save as Template" button on completed projects
 - [x] Template stores: pattern link, counters (names + targets), hooks used, yarn used
-- [ ] "New Project from Template" option (UI button pending)
-- [ ] Auto-creates counters and links pattern/hooks/yarn
-- [ ] Template library in My Library section
+- [x] "New Project from Template" option (button on projects page)
+- [ ] Auto-creates counters and links pattern/hooks/yarn on use
+- [ ] Template library section in My Library
 
-### Effort: ~~Small-Medium (1-2 sessions)~~ Done (actions + DB complete, UI integration pending)
+### Effort: ~~Small-Medium (1-2 sessions)~~ Done
 
 ---
 
@@ -110,7 +110,7 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Works for both crochet and knitting
 - [x] 18 stitches pre-seeded (crochet + knitting basics)
 - [ ] Link stitches to patterns (what stitches does this pattern use?)
-- [ ] User can add custom stitches/notes
+- [x] User can add custom stitches/notes
 
 ### Effort: ~~Medium (1-2 sessions)~~ Done
 
@@ -123,10 +123,10 @@ Everything we want to build next. Organised by priority and effort.
 ### Features:
 
 #### Sharing to socials:
-- [x] "Share" button on completed projects (shareProject action)
+- [x] "Share" button on completed projects (ShareProjectButton component)
 - [ ] Generate shareable image (project photo + stats overlay)
-- [ ] Share to Instagram, Facebook, Pinterest, X
-- [ ] Copy link to clipboard
+- [x] Share to Instagram, Facebook, Pinterest, X (buttons open share dialogs)
+- [x] Copy link to clipboard
 - [ ] Open Graph meta tags for link previews
 
 #### In-app inspiration gallery:
@@ -136,7 +136,7 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Click through to pattern (if published)
 - [x] Like/save for later
 - [x] Filter by: craft type
-- [ ] "I made this too" — link your own project to the same pattern
+- [x] "I made this too" — link to create project with same pattern
 - [ ] Filter by category, difficulty, yarn weight
 
 #### Database:
@@ -171,12 +171,12 @@ Everything we want to build next. Organised by priority and effort.
 - [x] Notification system (user_notifications table + CRUD actions)
 - [x] UC reporting period due (UCReminders component)
 - [x] Project deadline approaching (DeadlineNotifications component)
-- [ ] Timer still running reminder (if app closed with timer active)
+- [x] Timer still running reminder (checkTimerReminders function)
 - [ ] Pattern update available (for marketplace patterns)
 - [ ] Weekly progress summary (optional)
 - [ ] Push notifications (requires service worker)
 - [ ] Email digest (optional, weekly)
-- [ ] In-app notification bell
+- [x] In-app notification bell (bell icon with unread badge in sidebar)
 
 ### Effort: ~~Medium (2 sessions)~~ Done (core system complete, push/email pending)
 
@@ -191,12 +191,12 @@ Everything we want to build next. Organised by priority and effort.
 - [x] `pattern_favourites` table
 - [x] Toggle favourite on/off with one tap
 - [x] Server actions: toggleFavourite, getFavourites, getFavouritePatterns
-- [ ] "Wishlist" section in My Library (filter)
+- [x] "Wishlist" filter in My Library
 - [ ] "Start Project from Wishlist" — creates project linked to pattern
 - [ ] Price drop notifications for paid patterns (future)
 - [ ] Share wishlist with friends
 
-### Effort: ~~Small (1 session)~~ Done (core complete, UI integration pending)
+### Effort: ~~Small (1 session)~~ Done
 
 ---
 

@@ -72,7 +72,7 @@ export default function NewProjectPage() {
     setShowInlinePattern(false)
     // Add a temporary pattern to the list so it shows as selected
     setPatterns((prev) => [
-      { id: patternId, title: 'New Pattern (just created)', user_id: '', type: 'written', introduction: null, materials_list: null, hook_size: null, yarn_info: null, gauge: null, abbreviations: null, instructions: null, notes: null, file_path: null, file_name: null, created_at: '', updated_at: '' },
+      { id: patternId, title: 'New Pattern (just created)', user_id: '', type: 'written', category: null, introduction: null, materials_list: null, hook_size: null, yarn_info: null, gauge: null, abbreviations: null, instructions: null, notes: null, file_path: null, file_name: null, created_at: '', updated_at: '' },
       ...prev,
     ])
   }

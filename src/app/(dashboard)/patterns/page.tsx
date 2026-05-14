@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getPatterns } from '@/lib/actions/patterns'
 import EmptyState from '@/components/ui/EmptyState'
 import BulkPatternUploader from '@/components/patterns/BulkPatternUploader'
+import PatternListClient from './PatternListClient'
 
 export default async function PatternsPage() {
   const { data: patterns, error } = await getPatterns()
@@ -33,7 +34,7 @@ export default async function PatternsPage() {
         <BulkPatternUploader />
       </div>
 
-      {/* Pattern list */}
+      {/* Pattern list with search/filter */}
       <div className="mt-6">
         {error && (
           <div className="rounded-md bg-red-50 p-4">
@@ -61,53 +62,7 @@ export default async function PatternsPage() {
         )}
 
         {!error && patterns && patterns.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {patterns.map((pattern) => (
-              <Link
-                key={pattern.id}
-                href={`/patterns/${pattern.id}`}
-                className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-purple-200 transition-all"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">
-                      {pattern.title}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          pattern.type === 'written'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
-                      >
-                        {pattern.type === 'written' ? 'Written' : 'Uploaded'}
-                      </span>
-                    </div>
-                    {pattern.hook_size && (
-                      <p className="mt-1 text-xs text-gray-500">
-                        Hook: {pattern.hook_size}
-                      </p>
-                    )}
-                    {pattern.introduction && (
-                      <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                        {pattern.introduction}
-                      </p>
-                    )}
-                  </div>
-                  <svg
-                    className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <PatternListClient patterns={patterns} />
         )}
       </div>
     </div>

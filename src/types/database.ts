@@ -43,6 +43,7 @@ export interface Database {
           user_id: string;
           title: string;
           type: string;
+          category: string | null;
           introduction: string | null;
           materials_list: string | null;
           hook_size: string | null;
@@ -61,6 +62,7 @@ export interface Database {
           user_id: string;
           title: string;
           type: string;
+          category?: string | null;
           introduction?: string | null;
           materials_list?: string | null;
           hook_size?: string | null;
@@ -79,6 +81,7 @@ export interface Database {
           user_id?: string;
           title?: string;
           type?: string;
+          category?: string | null;
           introduction?: string | null;
           materials_list?: string | null;
           hook_size?: string | null;

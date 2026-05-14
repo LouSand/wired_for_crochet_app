@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import type { Project, TimeSession, Counter, Pattern, Note } from '@/types/database'
 import { useTimer } from '@/hooks/useTimer'
 import { incrementCounter, decrementCounter } from '@/lib/actions/counters'
-import { deleteProject } from '@/lib/actions/projects'
+import { deleteProject, updateProject } from '@/lib/actions/projects'
+import { deleteAllAnnotations } from '@/lib/actions/pattern-annotations'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import PdfAnnotationViewer from '@/components/patterns/PdfAnnotationViewer'
 
@@ -75,6 +76,8 @@ export default function ProjectDashboard({
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false)
+  const [isCompleting, setIsCompleting] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -85,6 +88,24 @@ export default function ProjectDashboard({
       return
     }
     router.push('/projects')
+  }
+
+  const handleComplete = async (keepAnnotations: boolean) => {
+    setIsCompleting(true)
+    // Mark project as completed
+    const formData = new FormData()
+    formData.set('mark_as_finished', 'true')
+    formData.set('date_completed', new Date().toISOString().split('T')[0])
+    await updateProject(project.id, null, formData)
+
+    // Discard annotations if user chose not to keep them
+    if (!keepAnnotations && pattern) {
+      await deleteAllAnnotations(project.id, pattern.id)
+    }
+
+    setIsCompleting(false)
+    setShowCompleteDialog(false)
+    router.refresh()
   }
 
   const statusColor = STATUS_COLORS[project.status] ?? 'bg-gray-100 text-gray-700'
@@ -203,6 +224,15 @@ export default function ProjectDashboard({
             >
               Delete
             </button>
+            {project.status !== 'completed' && (
+              <button
+                type="button"
+                onClick={() => setShowCompleteDialog(true)}
+                className="inline-flex items-center rounded-lg border border-green-300 bg-white px-4 py-2.5 text-sm font-medium text-green-700 shadow-sm hover:bg-green-50 active:bg-green-100 min-h-[44px]"
+              >
+                ✓ Complete Project
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -241,6 +271,75 @@ export default function ProjectDashboard({
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteDialog(false)}
       />
+
+      {/* Complete project dialog — asks about annotations */}
+      {showCompleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">🎉 Complete Project</h2>
+            <p className="text-sm text-gray-600">
+              Mark &quot;{project.name}&quot; as finished?
+            </p>
+            {pattern && (
+              <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 space-y-2">
+                <p className="text-sm font-medium text-purple-800">
+                  Pattern annotations
+                </p>
+                <p className="text-xs text-purple-700">
+                  You have annotations on &quot;{pattern.title}&quot;. Would you like to keep them for next time you use this pattern, or discard them?
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleComplete(true)}
+                    disabled={isCompleting}
+                    className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 min-h-[40px]"
+                  >
+                    {isCompleting ? 'Completing...' : 'Keep annotations'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleComplete(false)}
+                    disabled={isCompleting}
+                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 min-h-[40px]"
+                  >
+                    Discard annotations
+                  </button>
+                </div>
+              </div>
+            )}
+            {!pattern && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleComplete(true)}
+                  disabled={isCompleting}
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 min-h-[40px]"
+                >
+                  {isCompleting ? 'Completing...' : 'Yes, mark as finished'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCompleteDialog(false)}
+                  disabled={isCompleting}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 min-h-[40px]"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {pattern && (
+              <button
+                type="button"
+                onClick={() => setShowCompleteDialog(false)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Cancel — don&apos;t complete yet
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -776,8 +875,9 @@ function PatternViewer({
               </div>
             )}
 
-            {/* Link to full pattern page */}
-            <div className="pt-3 border-t border-gray-100 flex justify-end">
+            {/* Link to full pattern page + reset progress */}
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+              <ResetProgressButton projectId={projectId} patternId={pattern.id} />
               <Link
                 href={`/patterns/${pattern.id}`}
                 className="text-xs text-purple-600 hover:text-purple-700 font-medium min-h-[44px] flex items-center"
@@ -1226,6 +1326,58 @@ function FocusCounterRow({ counter }: { counter: Counter }) {
         </button>
       </div>
     </div>
+  )
+}
+
+// ─── Reset Progress Button ───────────────────────────────────────────────────
+
+function ResetProgressButton({ projectId, patternId }: { projectId: string; patternId: string }) {
+  const [confirming, setConfirming] = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  const handleReset = async () => {
+    setResetting(true)
+    await deleteAllAnnotations(projectId, patternId)
+    setResetting(false)
+    setConfirming(false)
+    // Force page reload to clear annotation state
+    window.location.reload()
+  }
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-red-600">Clear all annotations?</span>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={resetting}
+          className="text-[10px] font-medium text-red-600 hover:text-red-700 underline"
+        >
+          {resetting ? 'Clearing...' : 'Yes'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="text-[10px] font-medium text-gray-500 hover:text-gray-700"
+        >
+          No
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setConfirming(true)}
+      className="text-xs text-gray-500 hover:text-red-600 font-medium min-h-[44px] flex items-center gap-1 transition-colors"
+    >
+      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+      Reset progress
+    </button>
   )
 }
 

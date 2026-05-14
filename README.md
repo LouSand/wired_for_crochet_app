@@ -136,15 +136,15 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 
 **Features:**
 - [ ] Camera capture for pattern photos (mobile)
-- [ ] In-app PDF viewer for uploaded patterns
-- [ ] Pattern image zoom/pan for following along
-- [ ] Organise patterns into folders/categories
-- [ ] Pattern search and filtering improvements
+- [x] In-app PDF viewer for uploaded patterns
+- [x] Pattern image zoom/pan for following along
+- [x] Organise patterns into folders/categories
+- [x] Pattern search and filtering improvements
 
-**Status:** Partially done (upload exists, viewer/camera missing)  
-**Files affected:** `src/app/(dashboard)/patterns/`, new viewer components  
+**Status:** Mostly done (camera capture deferred — requires native device API)  
+**Files affected:** `src/app/(dashboard)/patterns/`, `PatternListClient.tsx`, migration  
 **Dependencies:** None  
-**Notes:** PDF viewing in-app is key — users shouldn't need to leave the app to read their pattern.
+**Notes:** PDF viewing with annotation, image zoom, category filtering, and search all implemented.
 
 ---
 
@@ -152,17 +152,17 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Let users mark their progress on a pattern and annotate it.
 
 **Features:**
-- [ ] Highlight completed rows/stitches on written patterns
-- [ ] Highlight regions on pattern images/PDFs
-- [ ] Notes linked to specific pattern rows/sections
-- [ ] On project finish: prompt to keep or delete highlights
-- [ ] Reusable annotations (keep notes for next time)
-- [ ] "Reset progress" option for restarting a pattern
+- [x] Highlight completed rows/stitches on written patterns
+- [x] Highlight regions on pattern images/PDFs
+- [x] Notes linked to specific pattern rows/sections
+- [x] On project finish: prompt to keep or delete highlights
+- [x] Reusable annotations (keep notes for next time)
+- [x] "Reset progress" option for restarting a pattern
 
-**Status:** Not started  
-**Files affected:** New `pattern_annotations` table, new components  
+**Status:** Done  
+**Files affected:** `ProjectDashboard.tsx`, `PdfAnnotationViewer.tsx`, `pattern-annotations.ts`, migration  
 **Dependencies:** Phase 3 (pattern viewer)  
-**Notes:** This is a differentiator — most crochet apps don't have good annotation support.
+**Notes:** Full annotation system with draw/highlight/text/eraser tools, persistent save to Supabase, keep/discard on project completion, and reset progress button.
 
 ---
 

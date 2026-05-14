@@ -12,6 +12,16 @@ export const SUBSCRIPTION_TIERS = ['free', 'pro', 'pro_plus'] as const;
 export type SubscriptionTier = (typeof SUBSCRIPTION_TIERS)[number];
 
 export const EXPENSE_CATEGORIES = [
+  'cost_of_goods',       // Box 11: Cost of goods bought for resale or goods used
+  'travel',             // Box 12: Car, van and travel expenses
+  'staff_costs',        // Box 13: Wages, salaries and other staff costs
+  'premises',           // Box 14: Rent, rates, power and insurance costs
+  'repairs',            // Box 15: Repairs and maintenance of property and equipment
+  'professional_fees',  // Box 16: Accountancy, legal and other professional fees
+  'finance_charges',    // Box 17: Interest and bank/credit card charges
+  'office_costs',       // Box 18: Phone, fax, stationery and other office costs
+  'other_expenses',     // Box 19: Other allowable business expenses
+  // Legacy categories (mapped to new boxes in tax summary)
   'equipment',
   'stock',
   'subscription',

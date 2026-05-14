@@ -9,7 +9,6 @@ import {
   updateExpense,
   type ExpenseActionState,
 } from '@/lib/actions/expenses'
-import { EXPENSE_CATEGORIES } from '@/types/business'
 import type { PurchaseRow, SupplierRow } from '@/types/business'
 import InvoiceUploader from './InvoiceUploader'
 
@@ -120,12 +119,28 @@ export default function ExpenseForm({ expense, suppliers }: ExpenseFormProps) {
           aria-describedby={state?.fieldErrors?.category ? 'category-error' : undefined}
         >
           <option value="">Select a category</option>
-          {EXPENSE_CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-            </option>
-          ))}
+          <optgroup label="SA103 Tax Return Categories">
+            <option value="cost_of_goods">Cost of Goods (Box 11)</option>
+            <option value="travel">Car, Van &amp; Travel (Box 12)</option>
+            <option value="staff_costs">Wages &amp; Staff Costs (Box 13)</option>
+            <option value="premises">Rent, Rates &amp; Power (Box 14)</option>
+            <option value="repairs">Repairs &amp; Maintenance (Box 15)</option>
+            <option value="professional_fees">Professional Fees (Box 16)</option>
+            <option value="finance_charges">Interest &amp; Bank Charges (Box 17)</option>
+            <option value="office_costs">Phone, Stationery &amp; Office (Box 18)</option>
+            <option value="other_expenses">Other Expenses (Box 19)</option>
+          </optgroup>
+          <optgroup label="Quick Categories">
+            <option value="stock">Stock / Materials</option>
+            <option value="equipment">Equipment / Tools</option>
+            <option value="subscription">Subscriptions</option>
+            <option value="books">Books / Training</option>
+            <option value="office_supplies">Office Supplies</option>
+          </optgroup>
         </select>
+        <p className="mt-1 text-xs text-gray-500">
+          Categories map directly to SA103 Self Assessment boxes for easy tax return filing.
+        </p>
         {state?.fieldErrors?.category && (
           <p id="category-error" className="mt-1 text-sm text-red-600" role="alert">
             {state.fieldErrors.category[0]}

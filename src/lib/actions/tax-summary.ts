@@ -67,16 +67,29 @@ export interface SA103Summary {
  */
 function mapCategoryToBox(category: string): { box: number; label: string } {
   switch (category) {
+    // New SA103-aligned categories
+    case 'cost_of_goods':
     case 'stock':
       return { box: 11, label: 'Cost of goods bought for resale or goods used' }
-    case 'equipment':
-      return { box: 19, label: 'Other allowable business expenses (equipment/tools)' }
+    case 'travel':
+      return { box: 12, label: 'Car, van and travel expenses' }
+    case 'staff_costs':
+      return { box: 13, label: 'Wages, salaries and other staff costs' }
+    case 'premises':
+      return { box: 14, label: 'Rent, rates, power and insurance costs' }
+    case 'repairs':
+      return { box: 15, label: 'Repairs and maintenance of property and equipment' }
+    case 'professional_fees':
+      return { box: 16, label: 'Accountancy, legal and other professional fees' }
+    case 'finance_charges':
+      return { box: 17, label: 'Interest on bank and other loans and finance charges' }
+    case 'office_costs':
+    case 'office_supplies':
     case 'subscription':
       return { box: 18, label: 'Phone, fax, stationery and other office costs' }
+    case 'other_expenses':
+    case 'equipment':
     case 'books':
-      return { box: 19, label: 'Other allowable business expenses (books/training)' }
-    case 'office_supplies':
-      return { box: 18, label: 'Phone, fax, stationery and other office costs' }
     default:
       return { box: 19, label: 'Other allowable business expenses' }
   }

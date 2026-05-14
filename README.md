@@ -238,17 +238,17 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Let users share patterns with each other.
 
 **Features:**
-- [ ] "Publish" button on patterns (private → public)
-- [ ] Public pattern browsing (no auth required)
-- [ ] User profiles / seller pages
-- [ ] Pattern categories, tags, search
-- [ ] Reviews and ratings
-- [ ] Content moderation / reporting
+- [x] "Publish" button on patterns (private → public)
+- [x] Public pattern browsing (no auth required)
+- [x] User profiles / seller pages
+- [x] Pattern categories, tags, search
+- [x] Reviews and ratings
+- [x] Content moderation / reporting
 
-**Status:** Not started (placeholder notes at `.kiro/specs/pattern-marketplace/notes.md`)  
-**Files affected:** New public routes, new tables, new components  
+**Status:** Done  
+**Files affected:** `src/app/marketplace/`, `src/lib/actions/marketplace.ts`, `src/types/marketplace.ts`, migration  
 **Dependencies:** Phase 3, Phase 4  
-**Notes:** This requires public-facing pages, SEO, and content moderation planning.
+**Notes:** Full marketplace with public browsing, seller profiles, reviews, reporting. Free pattern acquisition works. Paid sales require Stripe Connect (Phase 10).
 
 ---
 
@@ -256,19 +256,19 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Users can sell patterns; Wired for Crochet takes a commission.
 
 **Features:**
-- [ ] Pattern pricing (free or paid)
+- [x] Pattern pricing (free or paid)
 - [ ] Stripe Connect integration (split payments)
-- [ ] Seller onboarding and payouts
-- [ ] Buyer purchase flow and library
+- [x] Seller onboarding and payouts (profile setup done, Stripe pending)
+- [x] Buyer purchase flow and library
 - [ ] Commission system (platform percentage)
-- [ ] Seller dashboard (sales, earnings, analytics)
+- [x] Seller dashboard (sales, earnings, analytics)
 - [ ] Refund handling
 - [ ] Tax/VAT considerations (UK)
 
-**Status:** Not started (notes at `.kiro/specs/pattern-marketplace/notes.md`)  
-**Files affected:** New marketplace routes, Stripe integration, new tables  
+**Status:** Partially done (infrastructure built, Stripe integration pending)  
+**Files affected:** `src/app/marketplace/`, marketplace actions, migration  
 **Dependencies:** Phase 9  
-**Notes:** Major feature requiring Stripe account, legal terms, and content policy.
+**Notes:** All marketplace UI and data layer is built. Free patterns work end-to-end. Paid sales need Stripe Connect account setup, webhook handling, and commission logic. This requires a Stripe account and domain verification.
 
 ---
 

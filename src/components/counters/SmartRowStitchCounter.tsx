@@ -48,7 +48,8 @@ export default function SmartRowStitchCounter({
   const currentRowData = rowData.find((r) => r.row === currentRow)
   const currentStitches = currentRowData?.completedStitches ?? 0
   const currentTarget = currentRowData?.targetStitches ??
-    stitchCountsPerRow.find((r) => r.row === currentRow)?.stitches ?? 0
+    stitchCountsPerRow.find((r) => r.row === currentRow)?.stitches ?? 
+    (stitchCountsPerRow.length > 0 ? stitchCountsPerRow[stitchCountsPerRow.length - 1].stitches : 0)
 
   // Get stitch target for a specific row
   const getTargetForRow = useCallback((row: number) => {
@@ -78,26 +79,27 @@ export default function SmartRowStitchCounter({
     }
   }
 
-  // Advance to next row — resets stitch counter
+  // Advance to next row — resets stitch counter to 0
   const nextRow = () => {
     if (currentRow >= totalRows) return
     const newRow = currentRow + 1
     setCurrentRow(newRow)
-    // Ensure new row has an entry (starts at 0)
+    // Reset stitch counter for new row (or create entry if doesn't exist)
     setRowData((prev) => {
       const existing = prev.find((r) => r.row === newRow)
-      if (!existing) {
-        return [...prev, { row: newRow, targetStitches: getTargetForRow(newRow), completedStitches: 0 }]
+      if (existing) {
+        // Row exists but we're advancing fresh — reset to 0
+        return prev.map((r) => r.row === newRow ? { ...r, completedStitches: 0 } : r)
       }
-      return prev
+      return [...prev, { row: newRow, targetStitches: getTargetForRow(newRow), completedStitches: 0 }]
     })
   }
 
-  // Go back a row — restores previous stitch count
+  // Go back a row — restores previous stitch count (for frogging)
   const prevRow = () => {
     if (currentRow <= 1) return
     setCurrentRow(currentRow - 1)
-    // Previous row's data is preserved in rowData — it will show automatically
+    // Previous row's data is preserved in rowData — shows where you left off
   }
 
   const rowProgress = totalRows > 0 ? Math.round((currentRow / totalRows) * 100) : 0

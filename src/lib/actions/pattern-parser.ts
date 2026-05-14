@@ -27,6 +27,16 @@ export async function analysePattern(patternId: string): Promise<{
   }
 
   const analysis = parsePattern(pattern.instructions)
+
+  // Save difficulty to the pattern if detected
+  if (analysis.difficulty) {
+    await supabase
+      .from('patterns')
+      .update({ difficulty: analysis.difficulty })
+      .eq('id', patternId)
+      .eq('user_id', user.id)
+  }
+
   return { data: analysis, error: null }
 }
 

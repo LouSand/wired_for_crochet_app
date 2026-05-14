@@ -72,7 +72,7 @@ export default function NewProjectPage() {
     setShowInlinePattern(false)
     // Add a temporary pattern to the list so it shows as selected
     setPatterns((prev) => [
-      { id: patternId, title: 'New Pattern (just created)', user_id: '', type: 'written', category: null, introduction: null, materials_list: null, hook_size: null, yarn_info: null, gauge: null, abbreviations: null, instructions: null, notes: null, file_path: null, file_name: null, is_published: false, price: null, currency: 'GBP', slug: null, preview_description: null, tags: [], view_count: 0, purchase_count: 0, average_completion_seconds: null, completion_count: 0, terminology: 'uk', stitches_used: [], created_at: '', updated_at: '' },
+      { id: patternId, title: 'New Pattern (just created)', user_id: '', type: 'written', category: null, introduction: null, materials_list: null, hook_size: null, yarn_info: null, gauge: null, abbreviations: null, instructions: null, notes: null, file_path: null, file_name: null, is_published: false, price: null, currency: 'GBP', slug: null, preview_description: null, tags: [], view_count: 0, purchase_count: 0, average_completion_seconds: null, completion_count: 0, terminology: 'uk', difficulty: null, stitches_used: [], created_at: '', updated_at: '' },
       ...prev,
     ])
   }

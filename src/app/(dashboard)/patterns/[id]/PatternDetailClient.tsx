@@ -215,6 +215,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
               className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {pending ? 'Saving...' : 'Save Pattern'}
             </button>
+            <PublishButton patternId={pattern.id} isPublished={pattern.is_published} />
             <button type="button" onClick={() => setShowDeleteDialog(true)}
               className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
               Delete
@@ -433,6 +434,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
           >
             {pending ? 'Saving...' : 'Save Pattern'}
           </button>
+          <PublishButton patternId={pattern.id} isPublished={pattern.is_published} />
           <button
             type="button"
             onClick={() => setShowDeleteDialog(true)}
@@ -503,5 +505,103 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
         onCancel={() => setShowDeleteDialog(false)}
       />
     </div>
+  )
+}
+
+// ─── Publish to Marketplace Button ───────────────────────────────────────────
+
+function PublishButton({ patternId, isPublished }: { patternId: string; isPublished: boolean }) {
+  const [showForm, setShowForm] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [published, setPublished] = useState(isPublished)
+  const [error, setError] = useState<string | null>(null)
+
+  const handlePublish = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setPublishing(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+    const priceStr = formData.get('price') as string
+    const price = priceStr ? parseFloat(priceStr) : null
+    const previewDescription = (formData.get('preview_description') as string) || ''
+    const tagsStr = (formData.get('tags') as string) || ''
+    const tags = tagsStr.split(',').map((t) => t.trim()).filter(Boolean)
+
+    const { publishPattern } = await import('@/lib/actions/marketplace')
+    const { error: err } = await publishPattern(patternId, { price, previewDescription, tags })
+
+    if (err) {
+      setError(err)
+    } else {
+      setPublished(true)
+      setShowForm(false)
+    }
+    setPublishing(false)
+  }
+
+  const handleUnpublish = async () => {
+    setPublishing(true)
+    const { unpublishPattern } = await import('@/lib/actions/marketplace')
+    await unpublishPattern(patternId)
+    setPublished(false)
+    setPublishing(false)
+  }
+
+  if (published) {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+          ✓ Published
+        </span>
+        <button
+          type="button"
+          onClick={handleUnpublish}
+          disabled={publishing}
+          className="text-xs text-gray-500 hover:text-red-600 underline"
+        >
+          Unpublish
+        </button>
+      </div>
+    )
+  }
+
+  if (showForm) {
+    return (
+      <form onSubmit={handlePublish} className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3 mt-4">
+        <h4 className="text-sm font-semibold text-green-900">Publish to Marketplace</h4>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Price (£) — leave blank for free</label>
+          <input type="number" name="price" step="0.01" min="0" placeholder="0.00 = Free" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Preview Description</label>
+          <textarea name="preview_description" rows={2} placeholder="What buyers will see before purchasing..." className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700">Tags (comma-separated)</label>
+          <input type="text" name="tags" placeholder="amigurumi, beginner, toy" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <div className="flex gap-2">
+          <button type="submit" disabled={publishing} className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+            {publishing ? 'Publishing...' : 'Publish'}
+          </button>
+          <button type="button" onClick={() => setShowForm(false)} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+            Cancel
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setShowForm(true)}
+      className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 shadow-sm hover:bg-green-50"
+    >
+      Publish to Marketplace
+    </button>
   )
 }

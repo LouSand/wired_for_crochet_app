@@ -138,6 +138,8 @@ export interface MaterialRow {
   secondary_unit: MaterialUnit | null;
   secondary_quantity_owned: number | null;
   secondary_quantity_used: number | null;
+  tracking_units: Array<{ unit: string; quantity_owned: number; quantity_used: number }>;
+  linked_expense_id: string | null;
   created_at: string;
   updated_at: string;
 }

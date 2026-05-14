@@ -231,68 +231,44 @@ export default function MaterialForm({ material }: MaterialFormProps) {
         </select>
       </div>
 
-      {/* Secondary Unit (optional) */}
-      <fieldset className="rounded-md border border-gray-200 p-4">
-        <legend className="text-sm font-medium text-gray-700 px-1">
-          Secondary Unit (optional)
-        </legend>
-        <p className="text-xs text-gray-500 mb-3">
-          Track this material in a second unit too — e.g. if you buy yarn by the skein but patterns call for metres or grams.
-        </p>
+      {/* Multiple Tracking Units */}
+      <MultiUnitTracker
+        initialUnits={material?.tracking_units as Array<{ unit: string; quantity_owned: number; quantity_used: number }> ?? []}
+      />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="secondary_unit" className="block text-xs font-medium text-gray-700">
-              Unit
-            </label>
-            <select
-              id="secondary_unit"
-              name="secondary_unit"
-              defaultValue={material?.secondary_unit ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            >
-              <option value="">None</option>
-              {MATERIAL_UNITS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {unit.charAt(0).toUpperCase() + unit.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Secondary Unit (legacy — kept for backwards compatibility) */}
+      <input type="hidden" name="secondary_unit" value={material?.secondary_unit ?? ''} />
+      <input type="hidden" name="secondary_quantity_owned" value={material?.secondary_quantity_owned ?? ''} />
+      <input type="hidden" name="secondary_quantity_used" value={material?.secondary_quantity_used ?? ''} />
 
-          <div>
-            <label htmlFor="secondary_quantity_owned" className="block text-xs font-medium text-gray-700">
-              Quantity Owned
-            </label>
-            <input
-              type="number"
-              id="secondary_quantity_owned"
-              name="secondary_quantity_owned"
-              step="0.01"
-              min="0"
-              defaultValue={material?.secondary_quantity_owned ?? ''}
-              placeholder="e.g. 450"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
+      {/* Add to Expenses */}
+      {!isEditing && (
+        <fieldset className="rounded-md border border-green-200 bg-green-50 p-4">
+          <legend className="text-sm font-medium text-green-800 px-1">
+            Add to Expenses
+          </legend>
+          <p className="text-xs text-gray-600 mb-3">
+            Automatically create a business expense record for this material purchase.
+          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <input type="checkbox" id="create_expense" name="create_expense" value="true" className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+            <label htmlFor="create_expense" className="text-sm text-gray-700">Yes, add this as a business expense</label>
           </div>
-
-          <div>
-            <label htmlFor="secondary_quantity_used" className="block text-xs font-medium text-gray-700">
-              Quantity Used
-            </label>
-            <input
-              type="number"
-              id="secondary_quantity_used"
-              name="secondary_quantity_used"
-              step="0.01"
-              min="0"
-              defaultValue={material?.secondary_quantity_used ?? ''}
-              placeholder="e.g. 120"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="expense_date" className="block text-xs font-medium text-gray-700">Purchase Date</label>
+              <input type="date" id="expense_date" name="expense_date" defaultValue={new Date().toISOString().split('T')[0]} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label htmlFor="expense_category" className="block text-xs font-medium text-gray-700">Category</label>
+              <select id="expense_category" name="expense_category" defaultValue="cost_of_goods" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="cost_of_goods">Cost of Goods (Box 11)</option>
+                <option value="stock">Stock / Materials</option>
+              </select>
+            </div>
           </div>
-        </div>
-      </fieldset>
+        </fieldset>
+      )}
 
       {/* Computed fields (read-only) */}
       <div className="rounded-md bg-gray-50 p-4">
@@ -332,5 +308,101 @@ export default function MaterialForm({ material }: MaterialFormProps) {
         </Link>
       </div>
     </form>
+  )
+}
+
+// ─── Multi-Unit Tracker ──────────────────────────────────────────────────────
+
+function MultiUnitTracker({ initialUnits }: { initialUnits: Array<{ unit: string; quantity_owned: number; quantity_used: number }> }) {
+  const [units, setUnits] = useState(
+    initialUnits.length > 0 ? initialUnits : []
+  )
+
+  const addUnit = () => {
+    setUnits([...units, { unit: '', quantity_owned: 0, quantity_used: 0 }])
+  }
+
+  const removeUnit = (idx: number) => {
+    setUnits(units.filter((_, i) => i !== idx))
+  }
+
+  const updateUnit = (idx: number, field: string, value: string | number) => {
+    const updated = [...units]
+    updated[idx] = { ...updated[idx], [field]: value }
+    setUnits(updated)
+  }
+
+  const availableUnits = ['grams', 'yards', 'metres', 'balls', 'skeins', 'ounces', 'kg', 'pieces', 'cones', 'hanks']
+
+  return (
+    <fieldset className="rounded-md border border-gray-200 p-4">
+      <legend className="text-sm font-medium text-gray-700 px-1">
+        Tracking Units
+      </legend>
+      <p className="text-xs text-gray-500 mb-3">
+        Add as many measurement units as you need — e.g. track by grams, yards, and balls simultaneously.
+      </p>
+
+      {/* Hidden field to pass JSON to server */}
+      <input type="hidden" name="tracking_units" value={JSON.stringify(units)} />
+
+      <div className="space-y-3">
+        {units.map((u, idx) => (
+          <div key={idx} className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="block text-[10px] font-medium text-gray-600">Unit</label>
+              <select
+                value={u.unit}
+                onChange={(e) => updateUnit(idx, 'unit', e.target.value)}
+                className="mt-0.5 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              >
+                <option value="">Select...</option>
+                {availableUnits.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-24">
+              <label className="block text-[10px] font-medium text-gray-600">Owned</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={u.quantity_owned || ''}
+                onChange={(e) => updateUnit(idx, 'quantity_owned', parseFloat(e.target.value) || 0)}
+                className="mt-0.5 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <div className="w-24">
+              <label className="block text-[10px] font-medium text-gray-600">Used</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={u.quantity_used || ''}
+                onChange={(e) => updateUnit(idx, 'quantity_used', parseFloat(e.target.value) || 0)}
+                className="mt-0.5 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => removeUnit(idx)}
+              className="flex h-8 w-8 items-center justify-center rounded text-red-500 hover:bg-red-50 shrink-0"
+              aria-label="Remove unit"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={addUnit}
+        className="mt-3 inline-flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+      >
+        + Add tracking unit
+      </button>
+    </fieldset>
   )
 }

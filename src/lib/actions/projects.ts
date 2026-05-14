@@ -249,6 +249,11 @@ export async function updateProject(
     return { error: 'Failed to update project. Please try again.' }
   }
 
+  // If project was just completed and has a linked pattern, record completion time
+  if (updatePayload.status === 'completed') {
+    await recordPatternCompletionTime(supabase, id, user.id)
+  }
+
   revalidatePath('/projects')
   revalidatePath(`/projects/${id}`)
   return null
@@ -367,4 +372,76 @@ export async function getProject(id: string): Promise<{ data: Project | null; er
   }
 
   return { data, error: null }
+}
+
+
+/**
+ * Record the total time spent on a project to its linked pattern.
+ * Called automatically when a project is marked as completed.
+ * Updates the pattern's average_completion_seconds and completion_count.
+ */
+async function recordPatternCompletionTime(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  userId: string
+) {
+  // Get the project's pattern_id and difficulty
+  const { data: project } = await supabase
+    .from('projects')
+    .select('pattern_id, difficulty')
+    .eq('id', projectId)
+    .eq('user_id', userId)
+    .single()
+
+  if (!project?.pattern_id) return // No linked pattern
+
+  // Calculate total time from time sessions
+  const { data: sessions } = await supabase
+    .from('time_sessions')
+    .select('start_time, end_time')
+    .eq('project_id', projectId)
+    .eq('user_id', userId)
+    .not('end_time', 'is', null)
+
+  if (!sessions || sessions.length === 0) return // No time tracked
+
+  const totalSeconds = sessions.reduce((sum, session) => {
+    const start = new Date(session.start_time).getTime()
+    const end = new Date(session.end_time!).getTime()
+    return sum + Math.round((end - start) / 1000)
+  }, 0)
+
+  if (totalSeconds <= 0) return
+
+  // Insert completion time record (ignore if already exists for this project)
+  await supabase
+    .from('pattern_completion_times')
+    .upsert({
+      pattern_id: project.pattern_id,
+      project_id: projectId,
+      user_id: userId,
+      total_seconds: totalSeconds,
+      difficulty: project.difficulty,
+      completed_at: new Date().toISOString(),
+    }, { onConflict: 'project_id' })
+
+  // Recalculate pattern average
+  const { data: allTimes } = await supabase
+    .from('pattern_completion_times')
+    .select('total_seconds')
+    .eq('pattern_id', project.pattern_id)
+
+  if (allTimes && allTimes.length > 0) {
+    const avgSeconds = Math.round(
+      allTimes.reduce((sum, t) => sum + t.total_seconds, 0) / allTimes.length
+    )
+
+    await supabase
+      .from('patterns')
+      .update({
+        average_completion_seconds: avgSeconds,
+        completion_count: allTimes.length,
+      })
+      .eq('id', project.pattern_id)
+  }
 }

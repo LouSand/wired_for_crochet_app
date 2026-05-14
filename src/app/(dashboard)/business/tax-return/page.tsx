@@ -66,6 +66,27 @@ export default function TaxReturnPage() {
       {/* SA103 Summary */}
       {summary && (
         <div className="space-y-6">
+          {/* Actions bar */}
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={`/api/tax-report/${taxYear}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-purple-700 min-h-[40px]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download SA103 PDF
+            </a>
+            <Link
+              href="/business/expenses"
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[40px]"
+            >
+              View All Receipts &amp; Evidence
+            </Link>
+          </div>
+
           {/* Header info */}
           <div className="rounded-xl border border-purple-200 bg-purple-50 p-5">
             <h2 className="text-lg font-bold text-purple-900">
@@ -173,9 +194,16 @@ export default function TaxReturnPage() {
                   </summary>
                   <div className="mt-2 ml-4 space-y-1">
                     {cat.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-xs text-gray-600">
-                        <span>{formatDate(item.date)} — {item.description}</span>
-                        <span className="font-medium">£{item.amount.toFixed(2)}</span>
+                      <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
+                        <span className="flex-1">{formatDate(item.date)} — {item.description}</span>
+                        <Link
+                          href="/business/expenses"
+                          className="shrink-0 text-purple-600 hover:text-purple-700 underline"
+                          title="View receipt/evidence"
+                        >
+                          📎
+                        </Link>
+                        <span className="font-medium shrink-0">£{item.amount.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>

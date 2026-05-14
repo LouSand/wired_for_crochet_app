@@ -9,6 +9,7 @@ import {
   updateExpense,
   type ExpenseActionState,
 } from '@/lib/actions/expenses'
+import { suggestCategory } from '@/lib/actions/ai-categorise'
 import type { PurchaseRow, SupplierRow } from '@/types/business'
 import InvoiceUploader from './InvoiceUploader'
 
@@ -24,6 +25,9 @@ export default function ExpenseForm({ expense, suppliers }: ExpenseFormProps) {
 
   const [invoicePath, setInvoicePath] = useState<string>(expense?.invoice_path ?? '')
   const [invoiceFileName, setInvoiceFileName] = useState<string>(expense?.invoice_file_name ?? '')
+  const [description, setDescription] = useState(expense?.description ?? '')
+  const [category, setCategory] = useState(expense?.category ?? '')
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
 
   const action = isEditing
     ? updateExpense.bind(null, expense.id)
@@ -40,6 +44,22 @@ export default function ExpenseForm({ expense, suppliers }: ExpenseFormProps) {
       router.push('/business/expenses')
     }
   }, [state, pending, router])
+
+  // AI category suggestion
+  useEffect(() => {
+    if (description.length < 4) { setAiSuggestion(null); return }
+    const timer = setTimeout(async () => {
+      const { suggestion, confidence } = await suggestCategory(description)
+      if (suggestion && confidence !== 'low') {
+        setAiSuggestion(suggestion)
+        if (confidence === 'high' && !category) setCategory(suggestion)
+      } else {
+        setAiSuggestion(null)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [description])
 
   const handleSubmit = (formData: FormData) => {
     // Inject invoice data into form
@@ -94,10 +114,18 @@ export default function ExpenseForm({ expense, suppliers }: ExpenseFormProps) {
           id="description"
           name="description"
           required
-          defaultValue={expense?.description ?? ''}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           aria-describedby={state?.fieldErrors?.description ? 'description-error' : undefined}
         />
+        {aiSuggestion && aiSuggestion !== category && (
+          <p className="mt-1 text-xs text-purple-600">
+            ✨ Suggested category: <strong>{aiSuggestion.replace(/_/g, ' ')}</strong>
+            {' '}
+            <button type="button" onClick={() => setCategory(aiSuggestion)} className="underline hover:text-purple-800">Use this</button>
+          </p>
+        )}
         {state?.fieldErrors?.description && (
           <p id="description-error" className="mt-1 text-sm text-red-600" role="alert">
             {state.fieldErrors.description[0]}
@@ -114,7 +142,8 @@ export default function ExpenseForm({ expense, suppliers }: ExpenseFormProps) {
           id="category"
           name="category"
           required
-          defaultValue={expense?.category ?? ''}
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           aria-describedby={state?.fieldErrors?.category ? 'category-error' : undefined}
         >

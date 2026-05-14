@@ -29,6 +29,11 @@ export default async function MarketplacePage({
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-2">
+            <Link href="/projects" className="text-sm text-purple-600 hover:text-purple-700">
+              ← Back to My Projects
+            </Link>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Pattern Marketplace</h1>

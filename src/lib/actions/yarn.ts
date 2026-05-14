@@ -67,6 +67,26 @@ export async function createYarnEntry(
 
   const validated = result.data
 
+  // Upload yarn photo if provided
+  let photoPath: string | null = null
+  const yarnPhoto = formData.get('yarn_photo') as File | null
+  if (yarnPhoto && yarnPhoto.size > 0) {
+    const ext = yarnPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('yarn-photos').upload(filePath, yarnPhoto)
+    if (!uploadErr) photoPath = filePath
+  }
+
+  // Upload label photo if provided
+  let labelPhotoPath: string | null = null
+  const labelPhoto = formData.get('label_photo') as File | null
+  if (labelPhoto && labelPhoto.size > 0) {
+    const ext = labelPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const filePath = `${user.id}/label-${crypto.randomUUID()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('yarn-photos').upload(filePath, labelPhoto)
+    if (!uploadErr) labelPhotoPath = filePath
+  }
+
   const { error } = await supabase.from('yarn_entries').insert({
     user_id: user.id,
     name: validated.name,
@@ -81,6 +101,8 @@ export async function createYarnEntry(
     recommended_hook_size: validated.recommended_hook_size ?? null,
     quantity_owned: validated.quantity_owned,
     cost_per_unit: validated.cost_per_unit ?? null,
+    photo_path: photoPath,
+    label_photo_path: labelPhotoPath,
   })
 
   if (error) {

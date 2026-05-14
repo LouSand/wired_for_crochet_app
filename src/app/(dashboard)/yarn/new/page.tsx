@@ -290,6 +290,50 @@ export default function NewYarnPage() {
           )}
         </div>
 
+        {/* Yarn Photo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Yarn Photo</label>
+          <p className="mt-0.5 text-xs text-gray-500">Upload a photo of the yarn so you can identify it easily.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <label className="inline-flex items-center gap-2 rounded-md border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 cursor-pointer transition-colors min-h-[44px]">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              </svg>
+              Take Photo
+              <input type="file" name="yarn_photo" accept="image/*" capture="environment" className="hidden" />
+            </label>
+            <label className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors min-h-[44px]">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              Choose File
+              <input type="file" name="yarn_photo" accept="image/jpeg,image/png,image/webp" className="hidden" />
+            </label>
+          </div>
+        </div>
+
+        {/* Label Photo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Label Photo</label>
+          <p className="mt-0.5 text-xs text-gray-500">Take a photo of the yarn label — shows washing instructions, gauge, fibre content, dye lot etc.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <label className="inline-flex items-center gap-2 rounded-md border border-purple-300 bg-purple-50 px-4 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 cursor-pointer transition-colors min-h-[44px]">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              </svg>
+              Take Photo of Label
+              <input type="file" name="label_photo" accept="image/*" capture="environment" className="hidden" />
+            </label>
+            <label className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors min-h-[44px]">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              Choose File
+              <input type="file" name="label_photo" accept="image/jpeg,image/png,image/webp" className="hidden" />
+            </label>
+          </div>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
           <button

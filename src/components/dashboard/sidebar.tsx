@@ -17,7 +17,7 @@ const navLinks = [
   { href: '/inspiration', label: 'Inspiration', icon: 'marketplace' },
   { href: '/tools', label: 'Tools', icon: 'hooks' },
   { href: '/yarn', label: 'Yarn', icon: 'yarn' },
-  { href: '/hooks', label: 'Hooks', icon: 'hooks' },
+  { href: '/hooks', label: 'Hooks & Needles', icon: 'hooks' },
   { href: '/business', label: 'Business', icon: 'business' },
   { href: '/settings', label: 'Settings', icon: 'settings' },
 ]

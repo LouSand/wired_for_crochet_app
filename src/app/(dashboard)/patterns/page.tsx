@@ -1,11 +1,15 @@
 import Link from 'next/link'
 import { getPatterns } from '@/lib/actions/patterns'
+import { getMyLibrary } from '@/lib/actions/marketplace'
 import EmptyState from '@/components/ui/EmptyState'
 import BulkPatternUploader from '@/components/patterns/BulkPatternUploader'
 import PatternListClient from './PatternListClient'
 
 export default async function PatternsPage() {
-  const { data: patterns, error } = await getPatterns()
+  const [{ data: patterns, error }, { data: libraryPatterns }] = await Promise.all([
+    getPatterns(),
+    getMyLibrary(),
+  ])
 
   return (
     <div>
@@ -62,7 +66,7 @@ export default async function PatternsPage() {
         )}
 
         {!error && patterns && patterns.length > 0 && (
-          <PatternListClient patterns={patterns} />
+          <PatternListClient patterns={patterns} libraryPatterns={libraryPatterns} />
         )}
       </div>
     </div>

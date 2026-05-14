@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card: #ffffff;
+  --card-border: #e5e7eb;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #7c3aed;
+  --accent-light: #ede9fe;
 }
 
 @theme inline {
@@ -12,11 +18,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #1a1a1a;
+  --card-border: #2e2e2e;
+  --muted: #1a1a1a;
+  --muted-foreground: #a1a1aa;
+  --accent: #a78bfa;
+  --accent-light: #1e1b4b;
 }
 
 body {
@@ -25,7 +35,7 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Ensure form inputs always have readable text — force dark text on all inputs */
+/* Ensure form inputs always have readable text */
 input,
 textarea,
 select,
@@ -41,10 +51,31 @@ input[type="tel"] {
   background-color: #ffffff !important;
 }
 
+.dark input,
+.dark textarea,
+.dark select,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark input[type="search"],
+.dark input[type="url"],
+.dark input[type="tel"] {
+  color: #ededed !important;
+  background-color: #2a2a2a !important;
+  border-color: #404040 !important;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: #6b7280 !important;
   opacity: 1 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important;
 }
 
 /* Ensure select options are readable */
@@ -52,6 +83,22 @@ select option {
   color: #171717;
   background-color: #ffffff;
 }
+
+.dark select option {
+  color: #ededed;
+  background-color: #2a2a2a;
+}
+
+/* Dark mode overrides for common UI elements */
+.dark .bg-white { background-color: var(--card) !important; }
+.dark .bg-gray-50 { background-color: #111111 !important; }
+.dark .border-gray-200 { border-color: var(--card-border) !important; }
+.dark .border-gray-100 { border-color: #222222 !important; }
+.dark .text-gray-900 { color: #f4f4f5 !important; }
+.dark .text-gray-800 { color: #e4e4e7 !important; }
+.dark .text-gray-700 { color: #d4d4d8 !important; }
+.dark .text-gray-600 { color: #a1a1aa !important; }
+.dark .text-gray-500 { color: #71717a !important; }
 
 /* Prevent horizontal overflow on small screens (320px+) */
 html,
@@ -61,7 +108,7 @@ body {
 
 /* Ensure visible focus indicators for keyboard navigation (WCAG 2.1 AA) */
 :focus-visible {
-  outline: 2px solid #7c3aed;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

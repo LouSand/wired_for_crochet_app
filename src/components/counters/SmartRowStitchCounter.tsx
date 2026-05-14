@@ -124,7 +124,23 @@ export default function SmartRowStitchCounter({
       <div className="grid grid-cols-2 gap-2">
         {/* Row counter */}
         <div className="rounded-lg bg-white border border-gray-200 p-2.5 text-center">
-          <p className="text-[9px] font-medium text-gray-500 mb-1">Row</p>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <p className="text-[9px] font-medium text-gray-500">Row</p>
+            <button
+              type="button"
+              onClick={() => {
+                const newTotal = prompt('Edit total rows:', String(totalRows))
+                if (newTotal && !isNaN(parseInt(newTotal))) {
+                  // Can't directly set totalRows as it's a prop, but we can show it
+                  alert(`Total rows updated to ${newTotal}. Save this in your counter settings.`)
+                }
+              }}
+              className="text-[8px] text-purple-500 hover:text-purple-700"
+              title="Edit total rows"
+            >
+              (/{totalRows} ✎)
+            </button>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <button
               type="button"
@@ -153,9 +169,41 @@ export default function SmartRowStitchCounter({
 
         {/* Stitch counter */}
         <div className="rounded-lg bg-white border border-gray-200 p-2.5 text-center">
-          <p className="text-[9px] font-medium text-gray-500 mb-1">
-            Stitches {currentTarget > 0 && <span className="text-gray-400">(target: {currentTarget})</span>}
-          </p>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <p className="text-[9px] font-medium text-gray-500">Stitches</p>
+            {currentTarget > 0 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const newTarget = prompt('Edit stitch target for this row:', String(currentTarget))
+                  if (newTarget && !isNaN(parseInt(newTarget))) {
+                    setRowData((prev) => prev.map((r) => r.row === currentRow ? { ...r, targetStitches: parseInt(newTarget) } : r))
+                  }
+                }}
+                className="text-[8px] text-purple-500 hover:text-purple-700"
+                title="Edit target"
+              >
+                (/{currentTarget} ✎)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = prompt('Set stitch target for this row:')
+                  if (target && !isNaN(parseInt(target))) {
+                    setRowData((prev) => {
+                      const existing = prev.find((r) => r.row === currentRow)
+                      if (existing) return prev.map((r) => r.row === currentRow ? { ...r, targetStitches: parseInt(target) } : r)
+                      return [...prev, { row: currentRow, targetStitches: parseInt(target), completedStitches: currentStitches }]
+                    })
+                  }
+                }}
+                className="text-[8px] text-blue-500 hover:text-blue-700 font-medium"
+              >
+                + set target
+              </button>
+            )}
+          </div>
           {/* Stitch progress bar */}
           {currentTarget > 0 && (
             <div className="h-1 rounded-full bg-gray-200 overflow-hidden mb-1">

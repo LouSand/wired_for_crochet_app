@@ -169,27 +169,32 @@ function parseLine(line: string, lineNumber: number): ParsedRow {
 
   // Check for row/round numbers — many formats:
   // "Row 1:", "R1:", "Row 1 -", "1.", "1:", "1)", "Rnd 1", "Round 1"
-  const rowMatch = line.match(/^(?:row|r)\s*(\d+)/i) ||
+  // Also row ranges: "R3-R12", "Rows 3-12"
+  const rowRangeMatch = line.match(/^(?:rows?|r)\s*(\d+)\s*[-–]\s*(?:r)?(\d+)/i)
+  const rowMatch = !rowRangeMatch && (
+    line.match(/^(?:row|r)\s*(\d+)/i) ||
     line.match(/^(\d+)\s*[.:)\-–]/) ||
     line.match(/^(?:row|r)\.?\s*(\d+)/i)
+  )
   const roundMatch = line.match(/^(?:round|rnd|rd)\s*(\d+)/i) ||
     line.match(/^(?:rnd|rd)\.?\s*(\d+)/i)
 
   // Check for stitch count — many formats:
-  // "(10)", "(10 sts)", "(10 stitches)", "[10]", "= 10 sts", "- 10", "{10}"
-  // Also matches mid-line: "...repeat (12 sts)" or "total: 24"
-  const stitchCountMatch = line.match(/\((\d+)(?:\s*(?:sts?|stitches?|st))?\)\s*$/) ||
-    line.match(/\[(\d+)(?:\s*(?:sts?|stitches?|st))?\]\s*$/) ||
+  // "(10)", "(10 sts)", "(78 dc)", "(24 sc)", "[10]", "= 10 sts", "- 10", "{10}"
+  // Also: "(approx 198 sts at R12)", "total: 24"
+  const stitchCountMatch = line.match(/\((\d+)\s*(?:sts?|stitches?|st|dc|sc|hdc|htr|tr|dtr|ch|sl\s*st)?\)\s*$/) ||
+    line.match(/\((\d+)\s*(?:sts?|stitches?|st|dc|sc|hdc|htr|tr|dtr|ch)\)/) ||
+    line.match(/\[(\d+)(?:\s*(?:sts?|stitches?|st|dc|sc|hdc|htr|tr))?\]\s*$/) ||
     line.match(/\{(\d+)(?:\s*(?:sts?|stitches?|st))?\}\s*$/) ||
     line.match(/[-–—=]\s*(\d+)\s*(?:sts?|stitches?|st)\s*$/) ||
     line.match(/[-–—=]\s*(\d+)\s*$/) ||
     line.match(/total:?\s*(\d+)/i) ||
-    line.match(/\((\d+)\s*(?:sts?|st|stitches?)\)/) ||
-    line.match(/\((\d+)\)(?:\s*$|\s*[-–])/) 
+    line.match(/approx\.?\s*(\d+)\s*(?:sts?|st)/i) ||
+    line.match(/\((\d+)\s+\w+\s+at\s+/i) 
 
   return {
     lineNumber,
-    rowNumber: rowMatch ? parseInt(rowMatch[1], 10) : null,
+    rowNumber: rowRangeMatch ? parseInt(rowRangeMatch[2], 10) : (rowMatch ? parseInt(rowMatch[1], 10) : null),
     roundNumber: roundMatch ? parseInt(roundMatch[1], 10) : null,
     stitchCount: stitchCountMatch ? parseInt(stitchCountMatch[1], 10) : null,
     text: line,

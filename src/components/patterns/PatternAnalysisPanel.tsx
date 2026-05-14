@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { analysePattern, autoCreateCounters } from '@/lib/actions/pattern-parser'
 import type { PatternAnalysis, SuggestedCounter } from '@/lib/pattern-parser'
+import SmartRowStitchCounter from '@/components/counters/SmartRowStitchCounter'
 
 interface PatternAnalysisPanelProps {
   patternId: string
@@ -101,10 +102,24 @@ export default function PatternAnalysisPanel({ patternId, projectId }: PatternAn
         {analysis.totalRows > 0 && (
           <span className="rounded bg-purple-100 px-2 py-0.5">{analysis.totalRows} rows detected</span>
         )}
+        {analysis.stitchCountsPerRow.length > 0 && (
+          <span className="rounded bg-blue-100 px-2 py-0.5 text-blue-700">{analysis.stitchCountsPerRow.length} rows with stitch counts</span>
+        )}
         {analysis.sections.length > 0 && (
           <span className="rounded bg-purple-100 px-2 py-0.5">{analysis.sections.length} sections</span>
         )}
       </div>
+
+      {/* Smart Row+Stitch Counter (if stitch counts detected) */}
+      {analysis.stitchCountsPerRow.length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-purple-600 uppercase tracking-wide mb-1">Smart Row & Stitch Tracker:</p>
+          <SmartRowStitchCounter
+            stitchCountsPerRow={analysis.stitchCountsPerRow}
+            totalRows={analysis.totalRows}
+          />
+        </div>
+      )}
 
       {/* Sections list */}
       {analysis.sections.length > 0 && (

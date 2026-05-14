@@ -70,3 +70,33 @@ export async function getFavouritePatterns(): Promise<{
 
   return { data: patterns, error: null }
 }
+
+/**
+ * Feature 9: Share wishlist with friends
+ * Generates a URL with the user's favourited pattern IDs encoded.
+ */
+export async function getShareableWishlistUrl(): Promise<{ url: string | null; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { url: null, error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('pattern_favourites')
+    .select('pattern_id')
+    .eq('user_id', user.id)
+
+  if (error) return { url: null, error: 'Failed to fetch favourites.' }
+
+  const patternIds = (data ?? []).map((f) => f.pattern_id)
+
+  if (patternIds.length === 0) {
+    return { url: null, error: 'No patterns in your wishlist to share.' }
+  }
+
+  // Encode pattern IDs as a base64 string for a compact URL
+  const encoded = Buffer.from(JSON.stringify(patternIds)).toString('base64url')
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wiredfor.crochet'
+  const url = `${baseUrl}/wishlist/shared?ids=${encoded}`
+
+  return { url, error: null }
+}

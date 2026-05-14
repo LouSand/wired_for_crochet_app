@@ -95,3 +95,57 @@ export async function deleteTemplate(id: string): Promise<{ error: string | null
   revalidatePath('/patterns')
   return { error: null }
 }
+
+/**
+ * Create a new project from a template.
+ * Creates the project, links the pattern_id, and creates counters from the template's counters array.
+ */
+export async function createProjectFromTemplate(templateId: string): Promise<{ projectId: string | null; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { projectId: null, error: 'Not authenticated' }
+
+  // Fetch the template
+  const { data: template, error: templateError } = await supabase
+    .from('project_templates')
+    .select('*')
+    .eq('id', templateId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (templateError || !template) return { projectId: null, error: 'Template not found.' }
+
+  // Create the project
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .insert({
+      user_id: user.id,
+      name: template.name,
+      description: template.description ?? null,
+      status: 'in_progress',
+      pattern_id: template.pattern_id ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (projectError || !project) return { projectId: null, error: 'Failed to create project.' }
+
+  // Create counters from the template's counters array
+  const counters = (template.counters as Array<{ name: string; target_value: number | null }>) ?? []
+  if (counters.length > 0) {
+    const counterInserts = counters.map((c, index) => ({
+      user_id: user.id,
+      project_id: project.id,
+      name: c.name,
+      current_value: 0,
+      target_value: c.target_value ?? null,
+      sort_order: index,
+    }))
+
+    await supabase.from('counters').insert(counterInserts)
+  }
+
+  revalidatePath('/projects')
+  revalidatePath('/patterns')
+  return { projectId: project.id, error: null }
+}

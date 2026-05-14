@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { Pattern } from '@/types/database'
+import { getTemplates, createProjectFromTemplate, type ProjectTemplate } from '@/lib/actions/project-templates'
 
 interface PatternListClientProps {
   patterns: Pattern[]
@@ -28,10 +30,35 @@ const PATTERN_CATEGORIES = [
 ]
 
 export default function PatternListClient({ patterns, libraryPatterns = [], favourites = [] }: PatternListClientProps) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<'patterns' | 'templates'>('patterns')
+  const [templates, setTemplates] = useState<ProjectTemplate[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'library' | 'wishlist'>('all')
+
+  useEffect(() => {
+    if (activeTab === 'templates' && templates.length === 0) {
+      setTemplatesLoading(true)
+      getTemplates().then(({ data }) => {
+        setTemplates(data)
+        setTemplatesLoading(false)
+      })
+    }
+  }, [activeTab, templates.length])
+
+  const handleUseTemplate = async (templateId: string) => {
+    const { projectId, error } = await createProjectFromTemplate(templateId)
+    if (error) {
+      alert(error)
+      return
+    }
+    if (projectId) {
+      router.push(`/projects/${projectId}`)
+    }
+  }
 
   // Extract unique categories from patterns
   const categories = useMemo(() => {
@@ -96,6 +123,74 @@ export default function PatternListClient({ patterns, libraryPatterns = [], favo
 
   return (
     <div className="space-y-4">
+      {/* Tab navigation */}
+      <div className="flex border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab('patterns')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            activeTab === 'patterns'
+              ? 'border-purple-600 text-purple-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Patterns
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('templates')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            activeTab === 'templates'
+              ? 'border-purple-600 text-purple-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Templates
+        </button>
+      </div>
+
+      {activeTab === 'templates' ? (
+        /* Templates section */
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Saved project templates. Use a template to quickly start a new project with pre-configured counters.</p>
+          {templatesLoading ? (
+            <p className="text-sm text-gray-500">Loading templates...</p>
+          ) : templates.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No templates saved yet.</p>
+              <p className="text-xs text-gray-400 mt-1">Save a project as a template from the project page.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {templates.map((template) => (
+                <div key={template.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-gray-900">{template.name}</h3>
+                  {template.description && (
+                    <p className="mt-1 text-xs text-gray-500 line-clamp-2">{template.description}</p>
+                  )}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 text-xs font-medium capitalize">
+                      {template.craft_type}
+                    </span>
+                    {template.counters.length > 0 && (
+                      <span className="text-xs text-gray-400">{template.counters.length} counter{template.counters.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleUseTemplate(template.id)}
+                    className="mt-3 w-full rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700"
+                  >
+                    Use Template
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Patterns section */
+        <div className="space-y-4">
       {/* Search and filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
         {/* Search */}
@@ -172,65 +267,79 @@ export default function PatternListClient({ patterns, libraryPatterns = [], favo
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((pattern) => (
-            <Link
-              key={pattern.id}
-              href={pattern.source === 'library' ? `/marketplace/library` : `/patterns/${pattern.id}`}
-              className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-purple-200 transition-all"
-            >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
-                    {pattern.title}
-                  </h3>
-                  <div className="mt-1 flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        pattern.type === 'written'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}
-                    >
-                      {pattern.type === 'written' ? 'Written' : 'Uploaded'}
-                    </span>
-                    {pattern.category && (
-                      <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 text-xs font-medium">
-                        {pattern.category}
+            <div key={pattern.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-purple-200 transition-all">
+              <Link
+                href={pattern.source === 'library' ? `/marketplace/library` : `/patterns/${pattern.id}`}
+                className="block"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      {pattern.title}
+                    </h3>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          pattern.type === 'written'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                      >
+                        {pattern.type === 'written' ? 'Written' : 'Uploaded'}
                       </span>
+                      {pattern.category && (
+                        <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-2 py-0.5 text-xs font-medium">
+                          {pattern.category}
+                        </span>
+                      )}
+                      {pattern.source === 'library' && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-medium">
+                          Marketplace
+                        </span>
+                      )}
+                      {'is_published' in pattern && pattern.is_published && pattern.source === 'mine' && (
+                        <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
+                          Published
+                        </span>
+                      )}
+                    </div>
+                    {'hook_size' in pattern && pattern.hook_size && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Hook: {pattern.hook_size}
+                      </p>
                     )}
-                    {pattern.source === 'library' && (
-                      <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-medium">
-                        Marketplace
-                      </span>
-                    )}
-                    {'is_published' in pattern && pattern.is_published && pattern.source === 'mine' && (
-                      <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
-                        Published
-                      </span>
+                    {'introduction' in pattern && pattern.introduction && (
+                      <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                        {pattern.introduction}
+                      </p>
                     )}
                   </div>
-                  {'hook_size' in pattern && pattern.hook_size && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Hook: {pattern.hook_size}
-                    </p>
-                  )}
-                  {'introduction' in pattern && pattern.introduction && (
-                    <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                      {pattern.introduction}
-                    </p>
-                  )}
+                  <svg
+                    className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <svg
-                  className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
+              </Link>
+              {/* Start Project link for wishlist/favourite items */}
+              {favourites.includes(pattern.id) && (
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <Link
+                    href={`/projects/new?pattern_id=${pattern.id}`}
+                    className="text-xs font-medium text-green-600 hover:text-green-700"
+                  >
+                    ▶ Start Project
+                  </Link>
+                </div>
+              )}
+            </div>
           ))}
+        </div>
+      )}
         </div>
       )}
     </div>

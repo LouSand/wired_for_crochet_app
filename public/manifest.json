@@ -1,0 +1,20 @@
+{
+  "name": "Wired for Crochet",
+  "short_name": "WiredCrochet",
+  "description": "Track your crochet projects, patterns, yarn stash, and time.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#9333ea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "productivity"],
+  "lang": "en-GB"
+}

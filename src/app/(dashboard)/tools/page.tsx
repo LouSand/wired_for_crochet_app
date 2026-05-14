@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getGaugeSwatches, saveGaugeSwatch, deleteGaugeSwatch, type GaugeSwatch } from '@/lib/actions/gauge'
+import { getYarnEntries } from '@/lib/actions/yarn'
+import type { YarnEntry } from '@/types/database'
 
 // ─── Terminology Conversion ──────────────────────────────────────────────────
 
@@ -258,6 +260,99 @@ export default function ToolsPage() {
 
       {/* Yarn Converter */}
       <YarnConverter />
+
+      {/* Yarn Substitution Helper */}
+      <YarnSubstitutionHelper />
+    </div>
+  )
+}
+
+// ─── Yarn Substitution Helper ────────────────────────────────────────────────
+
+const YARN_WEIGHT_CATEGORIES = [
+  'Lace',
+  'Super Fine / Fingering',
+  'Fine / Sport',
+  'Light / DK',
+  'Medium / Worsted',
+  'Bulky',
+  'Super Bulky',
+  'Jumbo',
+]
+
+function YarnSubstitutionHelper() {
+  const [selectedWeight, setSelectedWeight] = useState<string>('')
+  const [matchingYarns, setMatchingYarns] = useState<YarnEntry[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  const handleSearch = async () => {
+    if (!selectedWeight) return
+    setLoading(true)
+    setSearched(true)
+    const { data } = await getYarnEntries({ weight_category: selectedWeight })
+    setMatchingYarns(data ?? [])
+    setLoading(false)
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h3 className="text-base font-semibold text-gray-900 mb-1">Yarn Substitution Helper</h3>
+      <p className="text-xs text-gray-500 mb-4">Find yarns in your inventory that match a specific weight category.</p>
+
+      <div className="flex items-end gap-3">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">Yarn Weight Category</label>
+          <select
+            value={selectedWeight}
+            onChange={(e) => { setSelectedWeight(e.target.value); setSearched(false) }}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">Select a weight...</option>
+            {YARN_WEIGHT_CATEGORIES.map((w) => (
+              <option key={w} value={w}>{w}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={handleSearch}
+          disabled={!selectedWeight || loading}
+          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 min-h-[38px]"
+        >
+          {loading ? 'Searching...' : 'Find Matches'}
+        </button>
+      </div>
+
+      {searched && !loading && (
+        <div className="mt-4">
+          {matchingYarns.length === 0 ? (
+            <p className="text-sm text-gray-500">No yarns in your inventory match &quot;{selectedWeight}&quot;.</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 mb-2">
+                {matchingYarns.length} yarn{matchingYarns.length !== 1 ? 's' : ''} found matching &quot;{selectedWeight}&quot;:
+              </p>
+              {matchingYarns.map((yarn) => (
+                <div key={yarn.id} className="flex items-center justify-between rounded-lg bg-green-50 border border-green-200 p-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{yarn.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {[yarn.brand, yarn.colour, yarn.fibre_content].filter(Boolean).join(' • ')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">{yarn.quantity_owned} in stock</p>
+                    {yarn.recommended_hook_size && (
+                      <p className="text-xs text-gray-400">Hook: {yarn.recommended_hook_size}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

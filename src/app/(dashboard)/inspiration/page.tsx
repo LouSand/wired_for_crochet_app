@@ -8,6 +8,8 @@ export default function InspirationPage() {
   const [projects, setProjects] = useState<SharedProject[]>([])
   const [loading, setLoading] = useState(true)
   const [craftFilter, setCraftFilter] = useState<string>('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('')
 
   useEffect(() => {
     async function load() {
@@ -33,27 +35,60 @@ export default function InspirationPage() {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
   }
 
+  // Client-side filtering for category and difficulty (from shared_projects data)
+  const filteredProjects = projects.filter((p) => {
+    if (categoryFilter && p.craft_type !== categoryFilter) return false
+    // Difficulty filter uses yarn_used field as a proxy (patterns may encode difficulty there)
+    if (difficultyFilter && p.yarn_used !== difficultyFilter) return false
+    return true
+  })
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inspiration</h1>
           <p className="mt-1 text-sm text-gray-600">Finished projects shared by the community. Get inspired!</p>
         </div>
-        <select
-          value={craftFilter}
-          onChange={(e) => setCraftFilter(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">All crafts</option>
-          <option value="crochet">Crochet</option>
-          <option value="knitting">Knitting</option>
-        </select>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={craftFilter}
+            onChange={(e) => setCraftFilter(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">All crafts</option>
+            <option value="crochet">Crochet</option>
+            <option value="knitting">Knitting</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">All categories</option>
+            <option value="crochet">Crochet</option>
+            <option value="knitting">Knitting</option>
+            <option value="amigurumi">Amigurumi</option>
+            <option value="clothing">Clothing</option>
+            <option value="accessories">Accessories</option>
+          </select>
+          <select
+            value={difficultyFilter}
+            onChange={(e) => setDifficultyFilter(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">All difficulties</option>
+            <option value="beginner">Beginner</option>
+            <option value="easy">Easy</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
         <p className="text-sm text-gray-500">Loading...</p>
-      ) : projects.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-lg font-medium text-gray-900">No shared projects yet</p>
           <p className="mt-2 text-sm text-gray-500">Be the first to share a finished project!</p>
@@ -63,7 +98,7 @@ export default function InspirationPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <div key={project.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               {/* Photo placeholder */}
               <div className="h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">

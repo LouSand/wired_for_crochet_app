@@ -1,7 +1,35 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { getMarketplacePattern, getPatternReviews } from '@/lib/actions/marketplace'
 import PatternDetailActions from './PatternDetailActions'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const { data: pattern } = await getMarketplacePattern(slug)
+
+  if (!pattern) {
+    return { title: 'Pattern Not Found' }
+  }
+
+  const isFree = !pattern.price || pattern.price === 0
+  const priceStr = isFree ? 'Free' : `£${pattern.price?.toFixed(2)}`
+
+  return {
+    title: `${pattern.title} - Wired for Crochet Marketplace`,
+    description: pattern.preview_description ?? `${pattern.title} - ${priceStr} crochet pattern on Wired for Crochet`,
+    openGraph: {
+      title: pattern.title,
+      description: pattern.preview_description ?? `${pattern.title} - ${priceStr} crochet pattern`,
+      type: 'website',
+      siteName: 'Wired for Crochet',
+    },
+  }
+}
 
 export default async function MarketplacePatternPage({
   params,

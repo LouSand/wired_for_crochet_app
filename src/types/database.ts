@@ -65,6 +65,7 @@ export interface Database {
           average_completion_seconds: number | null;
           completion_count: number;
           terminology: 'uk' | 'us' | 'universal';
+          stitches_used: string[];
           created_at: string;
           updated_at: string;
         };
@@ -95,6 +96,7 @@ export interface Database {
           average_completion_seconds?: number | null;
           completion_count?: number;
           terminology?: 'uk' | 'us' | 'universal';
+          stitches_used?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -125,6 +127,7 @@ export interface Database {
           average_completion_seconds?: number | null;
           completion_count?: number;
           terminology?: 'uk' | 'us' | 'universal';
+          stitches_used?: string[];
           created_at?: string;
           updated_at?: string;
         };

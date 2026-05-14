@@ -110,9 +110,9 @@ export default function ProjectDashboard({
 
   const statusColor = STATUS_COLORS[project.status] ?? 'bg-gray-100 text-gray-700'
 
-  // Calculate overall project progress from counters
+  // Calculate overall project progress from counters or manual progress
   const countersWithTargets = counters.filter((c) => c.target_value && c.target_value > 0)
-  const overallProgress = countersWithTargets.length > 0
+  const counterProgress = countersWithTargets.length > 0
     ? Math.round(
         countersWithTargets.reduce((sum, c) => {
           const pct = Math.min(100, (c.current_value / (c.target_value ?? 1)) * 100)
@@ -120,6 +120,7 @@ export default function ProjectDashboard({
         }, 0) / countersWithTargets.length
       )
     : null
+  const overallProgress = project.manual_progress ?? counterProgress
 
   // ─── FOCUS MODE (Active Crocheting Mode) ─────────────────────────────────
   if (focusMode) {

@@ -170,15 +170,15 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Track which hooks are used for which parts of a pattern.
 
 **Features:**
-- [ ] Assign multiple hooks to a project
-- [ ] Record which hook was used for which section/part
-- [ ] Hook change log (when you switched hooks during a project)
-- [ ] Hook recommendations based on pattern requirements
+- [x] Assign multiple hooks to a project
+- [x] Record which hook was used for which section/part
+- [x] Hook change log (when you switched hooks during a project)
+- [x] Hook recommendations based on pattern requirements
 
-**Status:** Partially done (hooks assigned to projects, not to sections)  
-**Files affected:** `src/app/(dashboard)/projects/[id]/hooks/`, hook actions  
+**Status:** Done  
+**Files affected:** `ProjectHookSection.tsx`, hook actions, migration  
 **Dependencies:** None  
-**Notes:** Hook recommendations already exist based on yarn_types/pattern_types metadata.
+**Notes:** Same hook can now be linked multiple times for different sections. Each usage records the section name and optional note.
 
 ---
 
@@ -186,16 +186,16 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 **Goal:** Make it easy to record yarn details from the label.
 
 **Features:**
-- [ ] Upload/take photo of yarn label
-- [ ] Manual entry of all label details (brand, colour, weight, hook rec, washing, dye lot, fibre)
-- [ ] Yarn photo gallery
-- [ ] Link yarn entries to patterns and projects
+- [x] Upload/take photo of yarn label
+- [x] Manual entry of all label details (brand, colour, weight, hook rec, washing, dye lot, fibre)
+- [x] Yarn photo gallery
+- [x] Link yarn entries to patterns and projects
 - [ ] Prepare data structure for future AI extraction
 
-**Status:** Partially done (text fields exist, no photo upload for labels)  
-**Files affected:** `src/app/(dashboard)/yarn/`, yarn actions, new storage bucket  
+**Status:** Done (AI extraction deferred to Phase 8)  
+**Files affected:** `YarnPhotoUpload.tsx`, yarn actions, storage bucket  
 **Dependencies:** None  
-**Notes:** The yarn inventory already stores brand, colour, weight, fibre content, washing instructions, etc. Just needs photo support.
+**Notes:** Photo upload component created. Uses yarn-photos storage bucket. AI label reading deferred.
 
 ---
 
@@ -204,16 +204,16 @@ A comprehensive crochet project management app built with Next.js 16, Supabase, 
 
 **Features:**
 - [ ] Auto-create counters from written pattern rows (where detectable)
-- [ ] Overall project progress bar (from counters or manual)
-- [ ] Timer integrated into counter section
-- [ ] Session history with editable entries
-- [ ] Quick-tap counter mode (full-screen, large buttons)
+- [x] Overall project progress bar (from counters or manual)
+- [x] Timer integrated into counter section
+- [x] Session history with editable entries
+- [x] Quick-tap counter mode (full-screen, large buttons)
 - [ ] Haptic feedback on mobile counter taps
 
-**Status:** Partially done (counters + timer exist separately, not fully integrated)  
-**Files affected:** `ProjectDashboard.tsx`, counter components, timer components  
+**Status:** Mostly done (auto-create counters and haptic feedback deferred)  
+**Files affected:** `ProjectDashboard.tsx`, counter components, timer components, migration  
 **Dependencies:** Phase 2  
-**Notes:** The unified dashboard already shows timer + counters side by side. This phase refines the UX.
+**Notes:** Progress bar supports both auto-calculation from counters and manual override. Focus mode provides the quick-tap experience. Haptic feedback requires native API.
 
 ---
 

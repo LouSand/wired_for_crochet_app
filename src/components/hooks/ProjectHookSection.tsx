@@ -62,9 +62,8 @@ export default function ProjectHookSection({
     router.refresh()
   }
 
-  // Filter out hook entries already linked to this project
-  const linkedHookIds = new Set(hookUsages.map((u) => u.hook_entry_id))
-  const availableHooks = allHookEntries.filter((h) => !linkedHookIds.has(h.id))
+  // All hooks are available — same hook can be used for different sections
+  const availableHooks = allHookEntries
 
   return (
     <div className="space-y-6">
@@ -131,6 +130,20 @@ export default function ProjectHookSection({
                   )}
                 </div>
 
+                {/* Section/Part */}
+                <div>
+                  <label htmlFor="section" className="block text-sm font-medium text-gray-700">
+                    Pattern Section
+                  </label>
+                  <input
+                    type="text"
+                    id="section"
+                    name="section"
+                    placeholder="e.g., Main body, Border, Sleeves"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+
                 {/* Note */}
                 <div>
                   <label htmlFor="note" className="block text-sm font-medium text-gray-700">
@@ -140,7 +153,7 @@ export default function ProjectHookSection({
                     type="text"
                     id="note"
                     name="note"
-                    placeholder="e.g., used for main body"
+                    placeholder="e.g., switched to this for tighter stitches"
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                   {linkState?.fieldErrors?.note && (
@@ -192,6 +205,11 @@ export default function ProjectHookSection({
                   )}
                   {usage.hook_entries.material && (
                     <span className="capitalize">{usage.hook_entries.material}</span>
+                  )}
+                  {usage.section && (
+                    <span className="rounded bg-purple-100 text-purple-700 px-1.5 py-0.5 font-medium">
+                      {usage.section}
+                    </span>
                   )}
                   {usage.note && (
                     <span className="italic">{usage.note}</span>

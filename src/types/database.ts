@@ -111,6 +111,7 @@ export interface Database {
           priority: number | null;
           hourly_rate_override: number | null;
           pattern_id: string | null;
+          manual_progress: number | null;
           currency: string;
           created_at: string;
           updated_at: string;
@@ -129,6 +130,7 @@ export interface Database {
           priority?: number | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
+          manual_progress?: number | null;
           currency?: string;
           created_at?: string;
           updated_at?: string;
@@ -147,6 +149,7 @@ export interface Database {
           priority?: number | null;
           hourly_rate_override?: number | null;
           pattern_id?: string | null;
+          manual_progress?: number | null;
           currency?: string;
           created_at?: string;
           updated_at?: string;
@@ -349,6 +352,9 @@ export interface Database {
           project_id: string;
           user_id: string;
           note: string | null;
+          section: string | null;
+          started_at: string | null;
+          ended_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -357,6 +363,9 @@ export interface Database {
           project_id: string;
           user_id: string;
           note?: string | null;
+          section?: string | null;
+          started_at?: string | null;
+          ended_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -365,6 +374,9 @@ export interface Database {
           project_id?: string;
           user_id?: string;
           note?: string | null;
+          section?: string | null;
+          started_at?: string | null;
+          ended_at?: string | null;
           created_at?: string;
         };
       };
